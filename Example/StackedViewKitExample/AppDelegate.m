@@ -10,7 +10,7 @@
 #import "ExampleMenuRootController.h"
 
 @interface AppDelegate ()
-@property (nonatomic, strong) PSStackedViewController *stackController;
+@property (nonatomic, retain) PSStackedViewController *stackController;
 @end
 
 @implementation AppDelegate
@@ -20,12 +20,12 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions; {
 
-    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
     self.window.backgroundColor = [UIColor blackColor]; // really should be default
     
     // set root controller as stack controller
-    ExampleMenuRootController *menuController = [[ExampleMenuRootController alloc] init];
-    self.stackController = [[PSStackedViewController alloc] initWithRootViewController:menuController];
+    ExampleMenuRootController *menuController = [[[ExampleMenuRootController alloc] init] autorelease];
+    self.stackController = [[[PSStackedViewController alloc] initWithRootViewController:menuController] autorelease];
     self.window.rootViewController = self.stackController;
     [self.window makeKeyAndVisible];
 

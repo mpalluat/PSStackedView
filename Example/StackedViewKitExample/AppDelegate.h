@@ -17,7 +17,7 @@
     PSStackedViewController *stackController_;
 }
 
-@property (nonatomic, strong) UIWindow *window;
-@property (nonatomic, strong, readonly) PSStackedViewController *stackController;
+@property (nonatomic, retain) UIWindow *window;
+@property (nonatomic, retain, readonly) PSStackedViewController *stackController;
 
 @end

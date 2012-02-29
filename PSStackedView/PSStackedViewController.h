@@ -18,7 +18,24 @@ enum {
 } typedef PSSVSnapOption;
 
 /// StackController hosing a backside rootViewController and the stacked controllers
-@interface PSStackedViewController : UIViewController
+@interface PSStackedViewController : UIViewController <UIGestureRecognizerDelegate> {
+    NSMutableArray *viewControllers_;
+    // internal drag state handling and other messy details
+    PSSVSnapOption lastDragOption_;
+    BOOL snapBackFromLeft_;
+    NSInteger lastDragOffset_;
+    BOOL lastDragDividedOne_;
+    NSInteger lastVisibleIndexBeforeRotation_;   
+    BOOL enableBounces_;
+    struct {
+        unsigned int delegateWillInsertViewController:1;
+        unsigned int delegateDidInsertViewController:1;
+        unsigned int delegateWillRemoveViewController:1;
+        unsigned int delegateDidRemoveViewController:1;
+        unsigned int delegateDidPanViewController:1;
+        unsigned int delegateDidAlign:1;
+    } delegateFlags_;
+}
 
 /// the root controller gets the whole background view
 - (id)initWithRootViewController:(UIViewController *)rootViewController;
@@ -77,24 +94,24 @@ enum {
 - (NSInteger)indexOfViewController:(UIViewController *)viewController;
 
 /// event delegate
-@property(nonatomic, unsafe_unretained) id<PSStackedViewDelegate> delegate;
+@property(nonatomic, assign) id<PSStackedViewDelegate> delegate;
 
 /// root view controller, always displayed behind stack
-@property(nonatomic, strong, readonly) UIViewController *rootViewController;
+@property(nonatomic, retain, readonly) UIViewController *rootViewController;
 
 /// The top(last) view controller on the stack.
-@property(nonatomic, readonly, strong) UIViewController *topViewController;
+@property(nonatomic, readonly, retain) UIViewController *topViewController;
 
 /// first view controller
-@property(nonatomic, readonly, strong) UIViewController *firstViewController;
+@property(nonatomic, readonly, retain) UIViewController *firstViewController;
 
 /// represents current state via floating point. shows edge attaches, menu docking, etc
 @property(nonatomic, readonly, assign) CGFloat floatIndex;
 
 /// view controllers visible. NOT KVO compliant, is calculated on demand.
-@property(nonatomic, readonly, strong) NSArray *visibleViewControllers;
+@property(nonatomic, readonly, retain) NSArray *visibleViewControllers;
 
-@property(nonatomic, readonly, strong) NSArray *fullyVisibleViewControllers;
+@property(nonatomic, readonly, retain) NSArray *fullyVisibleViewControllers;
 
 /// index of first currently visible view controller [calculated]
 @property(nonatomic, assign, readonly) NSInteger firstVisibleIndex;
@@ -103,10 +120,10 @@ enum {
 @property(nonatomic, assign, readonly) NSInteger lastVisibleIndex;
 
 /// array of all current view controllers, sorted
-@property(nonatomic, strong, readonly) NSArray *viewControllers;
+@property(nonatomic, retain, readonly) NSArray *viewControllers;
 
 /// pangesture recognizer used
-@property(nonatomic, strong) UIPanGestureRecognizer *panRecognizer;
+@property(nonatomic, retain) UIPanGestureRecognizer *panRecognizer;
 
 /// enable if you show another object in fullscreen, but stacked view still thinks it's displayed
 /// reduces animations to a minimum to get smoother reactions on frontmost view.

@@ -10,8 +10,10 @@
 
 int main(int argc, char *argv[])
 {
-    @autoreleasepool {
-        int retVal = UIApplicationMain(argc, argv, nil, @"AppDelegate");
-        return retVal;
-    }
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	
+	int retVal = UIApplicationMain(argc, argv, nil, @"AppDelegate");
+	[pool drain];
+	
+	return retVal;
 }

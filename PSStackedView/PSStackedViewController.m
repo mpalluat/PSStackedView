@@ -26,26 +26,10 @@
 // prevents me getting crazy
 typedef void(^PSSVSimpleBlock)(void);
 
-@interface PSStackedViewController() <UIGestureRecognizerDelegate> {
-    NSMutableArray *viewControllers_;
-    // internal drag state handling and other messy details
-    PSSVSnapOption lastDragOption_;
-    BOOL snapBackFromLeft_;
-    NSInteger lastDragOffset_;
-    BOOL lastDragDividedOne_;
-    NSInteger lastVisibleIndexBeforeRotation_;   
-    BOOL enableBounces_;
-    struct {
-        unsigned int delegateWillInsertViewController:1;
-        unsigned int delegateDidInsertViewController:1;
-        unsigned int delegateWillRemoveViewController:1;
-        unsigned int delegateDidRemoveViewController:1;
-        unsigned int delegateDidPanViewController:1;
-        unsigned int delegateDidAlign:1;
-    }delegateFlags_;
-}
-@property(nonatomic, strong) UIViewController *rootViewController;
-@property(nonatomic, strong) NSArray *viewControllers;
+@interface PSStackedViewController()
+
+@property(nonatomic, retain) UIViewController *rootViewController;
+@property(nonatomic, retain) NSArray *viewControllers;
 @property(nonatomic, assign) NSInteger firstVisibleIndex;
 @property(nonatomic, assign) CGFloat floatIndex;
 - (UIViewController *)overlappedViewController;
@@ -83,7 +67,7 @@ typedef void(^PSSVSimpleBlock)(void);
     [self.view removeGestureRecognizer:self.panRecognizer];
     
     // add a gesture recognizer to detect dragging to the guest controllers
-    UIPanGestureRecognizer *panRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanFrom:)];
+    UIPanGestureRecognizer *panRecognizer = [[[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanFrom:)] autorelease];
     if (numberOfTouches_ > 0)
     {
         [panRecognizer setMinimumNumberOfTouches:numberOfTouches_];
@@ -100,7 +84,7 @@ typedef void(^PSSVSimpleBlock)(void);
 
 - (id)initWithRootViewController:(UIViewController *)rootViewController; {
     if ((self = [super init])) {
-        rootViewController_ = rootViewController;
+        self.rootViewController = rootViewController;
         objc_setAssociatedObject(rootViewController, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
         
         viewControllers_ = [[NSMutableArray alloc] init];
@@ -132,11 +116,19 @@ typedef void(^PSSVSimpleBlock)(void);
 - (void)dealloc {
     delegate_ = nil;
     panRecognizer_.delegate = nil;
+	self.panRecognizer = nil;
+	
     // remove all view controllers the hard way (w/o calling delegate)
     while ([self.viewControllers count]) {
         [self popViewControllerAnimated:NO];
     }
     
+	[viewControllers_ release];
+	
+	self.viewControllers = nil;	
+	self.rootViewController = nil;
+
+	[super dealloc];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

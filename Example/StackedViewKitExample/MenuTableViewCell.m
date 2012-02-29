@@ -21,7 +21,7 @@
         
         self.clipsToBounds = YES;
         
-        UIView* bgView = [[UIView alloc] init];
+        UIView* bgView = [[[UIView alloc] init] autorelease];
         bgView.backgroundColor = [UIColor colorWithWhite:0.f alpha:0.25f];
         self.selectedBackgroundView = bgView;
         
@@ -31,15 +31,15 @@
         
         self.imageView.contentMode = UIViewContentModeCenter;
         
-        UIView *topLine = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 200, 1)];
+        UIView *topLine = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 200, 1)] autorelease];
         topLine.backgroundColor = [UIColor colorWithWhite:0.5 alpha:0.25];
         [self.textLabel.superview addSubview:topLine];
         
-        UIView *bottomLine = [[UIView alloc] initWithFrame:CGRectMake(0, 43, 200, 1)];
+        UIView *bottomLine = [[[UIView alloc] initWithFrame:CGRectMake(0, 43, 200, 1)] autorelease];
         bottomLine.backgroundColor = [UIColor colorWithWhite:0 alpha:0.25];
         [self.textLabel.superview addSubview:bottomLine];
         
-        glowView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 30, 43)];
+        glowView = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 30, 43)] autorelease];
         glowView.image = [UIImage imageNamed:@"NewGlow"];
         glowView.hidden = YES;
         [self addSubview:glowView];
@@ -91,7 +91,7 @@
     }
     else {
         /* Create the appearance of a "dimmed" table cell, with a standard error icon */
-        UIView *newView = [[UIView alloc] initWithFrame:self.bounds];
+        UIView *newView = [[[UIView alloc] initWithFrame:self.bounds] autorelease];
         newView.backgroundColor = [UIColor colorWithWhite:.5f alpha:.5f];
         
         if (self.imageView.image) {
@@ -99,7 +99,7 @@
             self.imageView.image = [UIImage imageNamed:@"error"];
         }
         else {
-            UIImageView *error = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"error"]];
+            UIImageView *error = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"error"]] autorelease];
             CGFloat imgDim = 24.f;
             // set the error image's frame origin to be on the far right side of the table view cell
             CGRect frm = CGRectMake(195.f - imgDim , roundf((self.bounds.size.height/2) - (imgDim/2)), imgDim, imgDim);

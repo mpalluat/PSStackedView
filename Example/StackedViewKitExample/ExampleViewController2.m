@@ -53,7 +53,7 @@
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
+        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
     }
     
 	cell.textLabel.text = [NSString stringWithFormat:@"[%d] Cell %d", self.indexNumber, indexPath.row];
@@ -64,9 +64,9 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {    
     UIViewController<PSStackedViewDelegate> *viewController;
     if (indexPath.row == 0) {
-        viewController = [[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil];
+        viewController = [[[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil] autorelease];
     }else {
-        viewController = [[ExampleViewController2 alloc] initWithStyle:UITableViewStylePlain];        
+        viewController = [[[ExampleViewController2 alloc] initWithStyle:UITableViewStylePlain] autorelease];        
     }
     
     [XAppDelegate.stackController pushViewController:viewController fromViewController:self animated:YES];

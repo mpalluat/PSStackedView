@@ -12,10 +12,10 @@
 
 @interface PSSVContainerView ()
 @property(nonatomic, assign) CGFloat originalWidth;
-@property(nonatomic, strong) CAGradientLayer *leftShadowLayer;
-@property(nonatomic, strong) CAGradientLayer *innerShadowLayer;
-@property(nonatomic, strong) CAGradientLayer *rightShadowLayer;
-@property(nonatomic, strong) UIView *transparentView;
+@property(nonatomic, retain) CAGradientLayer *leftShadowLayer;
+@property(nonatomic, retain) CAGradientLayer *innerShadowLayer;
+@property(nonatomic, retain) CAGradientLayer *rightShadowLayer;
+@property(nonatomic, retain) UIView *transparentView;
 @end
 
 @implementation PSSVContainerView
@@ -36,14 +36,14 @@
 
 // creates vertical shadow
 - (CAGradientLayer *)shadowAsInverse:(BOOL)inverse {
-	CAGradientLayer *newShadow = [[CAGradientLayer alloc] init];
+	CAGradientLayer *newShadow = [[[CAGradientLayer alloc] init] autorelease];
     newShadow.startPoint = CGPointMake(0, 0.5);
     newShadow.endPoint = CGPointMake(1.0, 0.5);
 	CGColorRef darkColor  = (CGColorRef)CFRetain([UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor);
 	CGColorRef lightColor = (CGColorRef)CFRetain([UIColor clearColor].CGColor);
 	newShadow.colors = [NSArray arrayWithObjects:
-                        (__bridge id)(inverse ? lightColor : darkColor),
-                        (__bridge id)(inverse ? darkColor : lightColor),
+                        (id)(inverse ? lightColor : darkColor),
+                        (id)(inverse ? darkColor : lightColor),
                         nil];
     
     CFRelease(darkColor);
@@ -70,7 +70,7 @@
 #pragma mark - NSObject
 
 + (PSSVContainerView *)containerViewWithController:(UIViewController *)controller; {
-    PSSVContainerView *view = [[PSSVContainerView alloc] initWithFrame:controller.view.frame];
+    PSSVContainerView *view = [[[PSSVContainerView alloc] initWithFrame:controller.view.frame] autorelease];
     view.controller = controller;    
     return view;
 }
@@ -78,6 +78,14 @@
 - (void)dealloc {
     [self removeMask];
     self.shadow = PSSVSideNone; // TODO needed?
+	self.controller = nil;
+	
+	self.leftShadowLayer = nil;
+	self.innerShadowLayer = nil;
+	self.rightShadowLayer = nil;
+	self.transparentView = nil;
+
+	[super dealloc];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,7 +181,7 @@
             CAGradientLayer *leftShadow = [self shadowAsInverse:YES];
             self.leftShadowLayer = leftShadow;
         }
-        self.leftShadowLayer.frame = CGRectMake(-shadowWidth_, 0, shadowWidth_+cornerRadius_, self.controller.view.height);;
+        self.leftShadowLayer.frame = CGRectMake(-shadowWidth_, 0, shadowWidth_+cornerRadius_, self.controller.view.height);
         if ([self.layer.sublayers indexOfObjectIdenticalTo:self.leftShadowLayer] != 0) {
             [self.layer insertSublayer:self.leftShadowLayer atIndex:0];
         }
@@ -196,7 +204,7 @@
     
     if (shadow) {
         if (!self.innerShadowLayer) {
-            CAGradientLayer *innerShadow = [[CAGradientLayer alloc] init];
+            CAGradientLayer *innerShadow = [[[CAGradientLayer alloc] init] autorelease];
             innerShadow.colors = [NSArray arrayWithObjects:(id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, (id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, nil];
             self.innerShadowLayer = innerShadow;
         }
@@ -213,7 +221,7 @@
     BOOL isTransparent = darkRatio > 0.01f;
     
     if (isTransparent && !transparentView_) {
-        transparentView_ = [[UIView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.width, self.height)];
+        transparentView_ = [[[UIView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.width, self.height)] autorelease];
         transparentView_.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         transparentView_.backgroundColor = [UIColor blackColor];
         transparentView_.alpha = 0.f;

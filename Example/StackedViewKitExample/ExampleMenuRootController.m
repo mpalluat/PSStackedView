@@ -21,8 +21,8 @@
 #define kCellImage @"CellImage" 
 
 @interface ExampleMenuRootController()
-@property (nonatomic, strong) UITableView *menuTable;
-@property (nonatomic, strong) NSArray *cellContents;
+@property (nonatomic, retain) UITableView *menuTable;
+@property (nonatomic, retain) NSArray *cellContents;
 @end
 
 @implementation ExampleMenuRootController
@@ -51,7 +51,7 @@
     self.view.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:@"background"]];
             
     // prepare menu content
-    NSMutableArray *contents = [[NSMutableArray alloc] init];
+    NSMutableArray *contents = [[[NSMutableArray alloc] init] autorelease];
     [contents addObject:[NSDictionary dictionaryWithObjectsAndKeys:[UIImage invertImageNamed:@"08-chat"], kCellImage, NSLocalizedString(@"Example1",@""), kCellText, nil]];
     [contents addObject:[NSDictionary dictionaryWithObjectsAndKeys:[UIImage invertImageNamed:@"11-clock"], kCellImage, NSLocalizedString(@"Example2",@""), kCellText, nil]];
     [contents addObject:[NSDictionary dictionaryWithObjectsAndKeys:[UIImage invertImageNamed:@"15-tags"], kCellImage, NSLocalizedString(@" ",@""), kCellText, nil]];
@@ -61,7 +61,7 @@
     self.cellContents = contents;
     
     // add table menu
-	UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, kMenuWidth, self.view.height) style:UITableViewStylePlain];
+	UITableView *tableView = [[[UITableView alloc] initWithFrame:CGRectMake(0, 0, kMenuWidth, self.view.height) style:UITableViewStylePlain] autorelease];
     self.menuTable = tableView;
     
     self.menuTable.backgroundColor = [UIColor clearColor];
@@ -88,7 +88,7 @@
     
     MenuTableViewCell *cell = (MenuTableViewCell*)[tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
-        cell = [[MenuTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
+        cell = [[[MenuTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
     }
     
 	cell.textLabel.text = [[cellContents_ objectAtIndex:indexPath.row] objectForKey:kCellText];
@@ -120,13 +120,13 @@
     }
     
     if (indexPath.row == 0) {
-        viewController = [[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil];
+        viewController = [[[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil] autorelease];
         ((ExampleViewController1 *)viewController).indexNumber = [stackController.viewControllers count];
     }else if(indexPath.row == 1) {
-        viewController = [[ExampleViewController2 alloc] initWithStyle:UITableViewStylePlain];     
+        viewController = [[[ExampleViewController2 alloc] initWithStyle:UITableViewStylePlain] autorelease];     
         ((ExampleViewController2 *)viewController).indexNumber = [stackController.viewControllers count];
     }else if(indexPath.row == 2) { // Twitter style
-        viewController = [[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil];
+        viewController = [[[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil] autorelease];
         ((ExampleViewController1 *)viewController).indexNumber = [stackController.viewControllers count];
         viewController.view.width = roundf((self.view.width - stackController.leftInset)/2);
     }
