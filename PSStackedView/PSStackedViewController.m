@@ -115,7 +115,7 @@ typedef void(^PSSVSimpleBlock)(void);
 
 - (void)dealloc {
     delegate_ = nil;
-    panRecognizer_.delegate = nil;
+    self.panRecognizer.delegate = nil;
 	self.panRecognizer = nil;
 	
     // remove all view controllers the hard way (w/o calling delegate)
@@ -635,7 +635,7 @@ enum {
         }
     }];
     
-    return [array copy];
+    return [[array copy] autorelease];
 }
 
 
@@ -994,24 +994,26 @@ enum {
 - (BOOL)popViewController:(UIViewController *)controller animated:(BOOL)animated {
     if (controller != self.topViewController) {
         return NO;
-    }else {
+    } else {
         return [self popViewControllerAnimated:animated] == controller;
     }
 }
 
-- (UIViewController *)popViewControllerAnimated:(BOOL)animated; {
+- (UIViewController *)popViewControllerAnimated:(BOOL)animated {
     PSSVLog(@"popping controller: %@ (#%d total, animated:%d)", [self topViewController], [self.viewControllers count], animated);
     
     UIViewController *lastController = [self topViewController];
-    if (lastController) {        
+    if (lastController) {
+		
         [self delegateWillRemoveViewController:lastController];
         
         // remove from view stack!
         PSSVContainerView *container = lastController.containerView;
+		
         [lastController viewWillDisappear:animated];
         
         PSSVSimpleBlock finishBlock = ^{
-            [container removeFromSuperview];
+			[container removeFromSuperview];
             [lastController viewDidDisappear:animated];
             [self delegateDidRemoveViewController:lastController];
         };

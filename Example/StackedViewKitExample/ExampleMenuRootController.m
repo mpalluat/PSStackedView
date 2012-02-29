@@ -33,7 +33,16 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - NSObject
 
+- (void)dealloc {
+	self.menuTable.delegate = nil;
+    self.menuTable.dataSource = nil;
+	[menuTable_ release];
+    [cellContents_ release];
 
+	NSLog(@"ExampleMenuRootController - dealloc");
+	
+	[super dealloc];
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - UIView
@@ -122,19 +131,18 @@
     if (indexPath.row == 0) {
         viewController = [[[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil] autorelease];
         ((ExampleViewController1 *)viewController).indexNumber = [stackController.viewControllers count];
-    }else if(indexPath.row == 1) {
+    } else if(indexPath.row == 1) {
         viewController = [[[ExampleViewController2 alloc] initWithStyle:UITableViewStylePlain] autorelease];     
         ((ExampleViewController2 *)viewController).indexNumber = [stackController.viewControllers count];
-    }else if(indexPath.row == 2) { // Twitter style
+    } else if(indexPath.row == 2) { // Twitter style
         viewController = [[[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil] autorelease];
         ((ExampleViewController1 *)viewController).indexNumber = [stackController.viewControllers count];
         viewController.view.width = roundf((self.view.width - stackController.leftInset)/2);
-    }
-    else if(indexPath.row == 3) {        
+    } else if(indexPath.row == 3) {        
         [stackController collapseStack:1 animated:YES];
-    }else if(indexPath.row == 4) { // right
+    } else if(indexPath.row == 4) { // right
         [stackController expandStack:1 animated:YES];
-    }else if(indexPath.row == 5) {
+    } else if(indexPath.row == 5) {
         while ([stackController.viewControllers count]) {
             [stackController popViewControllerAnimated:YES];
         }

@@ -22,6 +22,12 @@
     return self;
 }
 
+- (void)dealloc {
+	[indexNumberLabel release];
+	NSLog(@"ExampleViewController1 - dealloc");
+	[super dealloc];
+}
+
 #pragma mark - View lifecycle
 
 - (void)viewDidLoad {

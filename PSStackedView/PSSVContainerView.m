@@ -63,7 +63,7 @@
     if (self.rightShadowLayer) {
         [set addObject:self.rightShadowLayer];
     }
-    return [set copy];
+    return [[set copy] autorelease];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,13 +78,17 @@
 - (void)dealloc {
     [self removeMask];
     self.shadow = PSSVSideNone; // TODO needed?
-	self.controller = nil;
 	
 	self.leftShadowLayer = nil;
 	self.innerShadowLayer = nil;
 	self.rightShadowLayer = nil;
 	self.transparentView = nil;
-
+	
+	NSLog(@"PSSVContainerView - dealloc %@", NSStringFromClass([controller_ class]));
+	
+	[controller_ release], controller_ = nil;
+	
+	
 	[super dealloc];
 }
 
@@ -127,17 +131,21 @@
 
 - (void)setController:(UIViewController *)aController {
     if (controller_ != aController) {
+		
         if (controller_) {
             [controller_.view removeFromSuperview];
+			[controller_ release];
         }        
-        controller_ = aController;
+        controller_ = [aController retain];
         
-        // properly embed view
-        self.originalWidth = self.controller.view.width;
-        controller_.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth; 
-        controller_.view.frame = CGRectMake(0, 0, controller_.view.width, controller_.view.height);
-        [self addSubview:controller_.view];
-        [self bringSubviewToFront:transparentView_];
+		if (controller_) {
+			// properly embed view
+			self.originalWidth = self.controller.view.width;
+			controller_.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth; 
+			controller_.view.frame = CGRectMake(0, 0, controller_.view.width, controller_.view.height);
+			[self addSubview:controller_.view];
+			[self bringSubviewToFront:transparentView_];
+		}
     }
 }
 

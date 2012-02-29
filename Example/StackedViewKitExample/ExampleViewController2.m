@@ -24,6 +24,11 @@
     return self;
 }
 
+- (void)dealloc {
+	NSLog(@"ExampleViewController2 - dealloc");
+	[super dealloc];
+}
+
 
 #pragma mark - View lifecycle
 
