@@ -91,7 +91,7 @@ typedef void(^PSSVSimpleBlock)(void);
 - (id)initWithRootViewController:(UIViewController *)rootViewController floatingViewController:(UIViewController *)floatingViewController {
     if ((self = [super init])) {
         self.rootViewController = rootViewController;
-        objc_setAssociatedObject(rootViewController, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
+        if (rootViewController) objc_setAssociatedObject(rootViewController, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
 		
 		self.floatingViewController = floatingViewController;
 		if (floatingViewController) objc_setAssociatedObject(floatingViewController, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
@@ -103,7 +103,7 @@ typedef void(^PSSVSimpleBlock)(void);
         largeLeftInset_ = 200;
         
         [self configureGestureRecognizer];
-
+		
         enableBounces_ = YES;
         enableShadows_ = YES;
         enableDraggingPastInsets_ = YES;
@@ -111,7 +111,7 @@ typedef void(^PSSVSimpleBlock)(void);
         defaultShadowWidth_ = 60.0f;
         defaultShadowAlpha_ = 0.2f;
         cornerRadius_ = 6.0f;
-
+		
 #ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
         PSSVLog("Swizzling UIViewController.navigationController");
         Method origMethod = class_getInstanceMethod([UIViewController class], @selector(navigationController));
@@ -137,13 +137,23 @@ typedef void(^PSSVSimpleBlock)(void);
 	self.viewControllers = nil;	
 	self.rootViewController = nil;
 	self.floatingViewController = nil;
-
+	
 	[super dealloc];
 }
 
 - (void)awakeFromNib {
-	objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
-	if (floatingViewController_) objc_setAssociatedObject(floatingViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
+	if (rootViewController_) {
+		objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
+		[self.view addSubview:self.rootViewController.view];
+        self.rootViewController.view.frame = self.view.bounds;
+        self.rootViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+	}
+	if (floatingViewController_) {
+		objc_setAssociatedObject(floatingViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
+		[self.view addSubview:self.floatingViewController.view];
+        self.floatingViewController.view.frame = self.view.bounds;
+        self.floatingViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+	}
 	
 	viewControllers_ = [[NSMutableArray alloc] init];
 	
@@ -184,7 +194,7 @@ typedef void(^PSSVSimpleBlock)(void);
         delegateFlags_.delegateDidRemoveViewController = [delegate respondsToSelector:@selector(stackedView:didRemoveViewController:)];
         delegateFlags_.delegateDidPanViewController = [delegate respondsToSelector:@selector(stackedView:didPanViewController:byOffset:)];
         delegateFlags_.delegateDidAlign = [delegate respondsToSelector:@selector(stackedViewDidAlign:)];
-
+		
     }
 }
 
@@ -607,7 +617,7 @@ enum {
     
     self.floatIndex = 0.0f;
     [self alignStackAnimated:YES];
-
+	
 }
 
 // iterates controllers and sets width (also, enlarges if requested width is larger than current width)
@@ -1317,7 +1327,7 @@ enum {
                                          [self delegateDidAlign];
                                      case PSSVBounceBack:
                                          [self delegateDidAlign];
-
+										 
                                      default: {
                                          lastDragOffset_ = 0; // clear last drag offset for the animation
                                          //[self removeAnimationBlockerView];
@@ -1326,7 +1336,7 @@ enum {
                              }else if(finished){
                                  
                                  [self delegateDidAlign];
-
+								 
                              }
                              
                          }
@@ -1335,7 +1345,7 @@ enum {
     else {
         alignmentBlock();
         //[self delegateDidAlign];
-
+		
     }
     
 }
@@ -1460,7 +1470,7 @@ enum {
         self.floatingViewController.view.frame = self.view.bounds;
         self.floatingViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }
-
+	
 }
 
 - (void)viewWillAppear:(BOOL)animated {
