@@ -143,7 +143,7 @@ typedef void(^PSSVSimpleBlock)(void);
 
 - (void)awakeFromNib {
 	objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
-	objc_setAssociatedObject(floatingViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
+	if (floatingViewController_) objc_setAssociatedObject(floatingViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
 	
 	viewControllers_ = [[NSMutableArray alloc] init];
 	
