@@ -37,10 +37,14 @@ enum {
     } delegateFlags_;
 	
 	IBOutlet UIViewController *rootViewController_;
+	IBOutlet UIViewController *floatingViewController_;
 }
 
 /// the root controller gets the whole background view
 - (id)initWithRootViewController:(UIViewController *)rootViewController;
+
+/// the root controller gets the whole background view
+- (id)initWithRootViewController:(UIViewController *)rootViewController floatingViewController:(UIViewController *)floatingViewController;
 
 /// Uses a horizontal slide transition. Has no effect if the view controller is already in the stack.
 /// baseViewController is used to remove subviews if a previous controller invokes a new view. can be nil.
@@ -100,6 +104,9 @@ enum {
 
 /// root view controller, always displayed behind stack
 @property(nonatomic, retain, readonly) UIViewController *rootViewController;
+
+/// floating view controller, always displayed above stack
+@property(nonatomic, retain, readonly) UIViewController *floatingViewController;
 
 /// The top(last) view controller on the stack.
 @property(nonatomic, readonly, retain) UIViewController *topViewController;
