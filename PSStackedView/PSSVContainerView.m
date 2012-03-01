@@ -84,8 +84,6 @@
 	self.rightShadowLayer = nil;
 	self.transparentView = nil;
 	
-	NSLog(@"PSSVContainerView - dealloc %@", NSStringFromClass([controller_ class]));
-	
 	[controller_ release], controller_ = nil;
 	
 	
@@ -229,7 +227,7 @@
     BOOL isTransparent = darkRatio > 0.01f;
     
     if (isTransparent && !transparentView_) {
-        transparentView_ = [[[UIView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.width, self.height)] autorelease];
+        transparentView_ = [[UIView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.width, self.height)];
         transparentView_.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         transparentView_.backgroundColor = [UIColor blackColor];
         transparentView_.alpha = 0.f;

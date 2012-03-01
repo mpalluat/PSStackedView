@@ -38,8 +38,6 @@
     self.menuTable.dataSource = nil;
 	[menuTable_ release];
     [cellContents_ release];
-
-	NSLog(@"ExampleMenuRootController - dealloc");
 	
 	[super dealloc];
 }

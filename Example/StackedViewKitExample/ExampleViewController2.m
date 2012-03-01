@@ -25,7 +25,6 @@
 }
 
 - (void)dealloc {
-	NSLog(@"ExampleViewController2 - dealloc");
 	[super dealloc];
 }
 

@@ -24,7 +24,6 @@
 
 - (void)dealloc {
 	[indexNumberLabel release];
-	NSLog(@"ExampleViewController1 - dealloc");
 	[super dealloc];
 }
 
