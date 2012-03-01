@@ -131,6 +131,35 @@ typedef void(^PSSVSimpleBlock)(void);
 	[super dealloc];
 }
 
+- (void)awakeFromNib {
+	objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
+	
+	viewControllers_ = [[NSMutableArray alloc] init];
+	
+	// set some reasonble defaults
+	leftInset_ = 60;
+	largeLeftInset_ = 200;
+	
+	[self configureGestureRecognizer];
+	
+	enableBounces_ = YES;
+	enableShadows_ = YES;
+	enableDraggingPastInsets_ = YES;
+	enableScalingFadeInOut_ = YES;
+	defaultShadowWidth_ = 60.0f;
+	defaultShadowAlpha_ = 0.2f;
+	cornerRadius_ = 6.0f;
+	
+#ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
+	PSSVLog("Swizzling UIViewController.navigationController");
+	Method origMethod = class_getInstanceMethod([UIViewController class], @selector(navigationController));
+	Method overrideMethod = class_getInstanceMethod([UIViewController class], @selector(navigationControllerSwizzled));
+	method_exchangeImplementations(origMethod, overrideMethod);
+#endif
+	
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - Delegate
 

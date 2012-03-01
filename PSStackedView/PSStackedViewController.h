@@ -35,6 +35,8 @@ enum {
         unsigned int delegateDidPanViewController:1;
         unsigned int delegateDidAlign:1;
     } delegateFlags_;
+	
+	IBOutlet UIViewController *rootViewController_;
 }
 
 /// the root controller gets the whole background view
