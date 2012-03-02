@@ -45,6 +45,7 @@ typedef void(^PSSVSimpleBlock)(void);
     }delegateFlags_;
 }
 @property(nonatomic, strong) UIViewController *rootViewController;
+@property(nonatomic, strong) UIViewController *floatingViewController;
 @property(nonatomic, strong) NSArray *viewControllers;
 @property(nonatomic, assign) NSInteger firstVisibleIndex;
 @property(nonatomic, assign) CGFloat floatIndex;
@@ -58,6 +59,7 @@ typedef void(^PSSVSimpleBlock)(void);
 @synthesize viewControllers = viewControllers_;
 @synthesize floatIndex = floatIndex_;
 @synthesize rootViewController = rootViewController_;
+@synthesize floatingViewController = floatingViewController_;
 @synthesize panRecognizer = panRecognizer_;
 @synthesize delegate = delegate_;
 @synthesize reduceAnimations = reduceAnimations_;
@@ -98,7 +100,11 @@ typedef void(^PSSVSimpleBlock)(void);
     self.panRecognizer = panRecognizer;
 }
 
-- (id)initWithRootViewController:(UIViewController *)rootViewController; {
+- (id)initWithRootViewController:(UIViewController *)rootViewController {
+	return [self initWithRootViewController:rootViewController floatingViewController:nil];
+}
+	
+- (id)initWithRootViewController:(UIViewController *)rootViewController floatingViewController:(UIViewController *)floatingViewController {
     if ((self = [super init])) {
         rootViewController_ = rootViewController;
         objc_setAssociatedObject(rootViewController, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
@@ -138,6 +144,40 @@ typedef void(^PSSVSimpleBlock)(void);
     }
     
 }
+
+- (void)awakeFromNib {
+	if (rootViewController_) {
+		objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
+	}
+	if (floatingViewController_) {
+		objc_setAssociatedObject(floatingViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
+	}
+	
+	viewControllers_ = [[NSMutableArray alloc] init];
+	
+	// set some reasonble defaults
+	leftInset_ = 60;
+	largeLeftInset_ = 200;
+	
+	[self configureGestureRecognizer];
+	
+	enableBounces_ = YES;
+	enableShadows_ = YES;
+	enableDraggingPastInsets_ = YES;
+	enableScalingFadeInOut_ = YES;
+	defaultShadowWidth_ = 60.0f;
+	defaultShadowAlpha_ = 0.2f;
+	cornerRadius_ = 6.0f;
+	
+#ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
+	PSSVLog("Swizzling UIViewController.navigationController");
+	Method origMethod = class_getInstanceMethod([UIViewController class], @selector(navigationController));
+	Method overrideMethod = class_getInstanceMethod([UIViewController class], @selector(navigationControllerSwizzled));
+	method_exchangeImplementations(origMethod, overrideMethod);
+#endif
+	
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - Delegate
@@ -975,7 +1015,11 @@ enum {
             container.transform = CGAffineTransformMakeScale(1.2, 1.2); // large but fade in
     }
     
-    [self.view addSubview:container];
+	if (self.floatingViewController) {
+		[self.view insertSubview:container belowSubview:self.floatingViewController.view];
+	} else {
+		[self.view addSubview:container];
+	}
     
     if (animated) {
         [UIView animateWithDuration:kPSSVStackAnimationPushDuration delay:0.f options:UIViewAnimationOptionAllowUserInteraction animations:^{
@@ -1405,8 +1449,6 @@ enum {
     // embedding rootViewController
     if (self.rootViewController) {
         [self.view addSubview:self.rootViewController.view];
-        self.rootViewController.view.frame = self.view.bounds;
-        self.rootViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }
     
     for (UIViewController *controller in self.viewControllers) {
@@ -1414,6 +1456,11 @@ enum {
         UIView *controllerView = controller.view;
 #pragma unused(controllerView)
         //        [controller viewDidLoad];
+    }
+
+	// embedding floatingViewController
+    if (self.floatingViewController) {
+        [self.view addSubview:self.floatingViewController.view];
     }
 }
 
@@ -1424,6 +1471,8 @@ enum {
     for (UIViewController *controller in self.viewControllers) {
         [controller viewWillAppear:animated];
     }
+
+	[self.floatingViewController viewWillAppear:animated];
     
     // enlarge/shrinken stack
     [self updateViewControllerSizes];
@@ -1438,6 +1487,7 @@ enum {
     for (UIViewController *controller in self.viewControllers) {
         [controller viewDidAppear:animated];
     }
+	[self.floatingViewController viewDidAppear:animated];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -1447,6 +1497,7 @@ enum {
     for (UIViewController *controller in self.viewControllers) {
         [controller viewWillDisappear:animated];
     }
+	[self.floatingViewController viewWillDisappear:animated];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -1455,7 +1506,8 @@ enum {
     [self.rootViewController viewDidDisappear:animated];
     for (UIViewController *controller in self.viewControllers) {
         [controller viewDidDisappear:animated];
-    }   
+    }
+	[self.floatingViewController viewDidDisappear:animated];  
 }
 
 - (void)viewDidUnload {
@@ -1468,6 +1520,8 @@ enum {
         controller.view = nil;
         [controller viewDidUnload];
     }
+
+	[self.floatingViewController viewDidUnload]; 
     
     [super viewDidUnload];
 }
@@ -1488,7 +1542,9 @@ enum {
     
     for (UIViewController *controller in self.viewControllers) {
         [controller willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
-    }    
+    }
+
+	[floatingViewController_ willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
 }
 
 // event relay
@@ -1503,6 +1559,8 @@ enum {
     for (UIViewController *controller in self.viewControllers) {
         [controller didRotateFromInterfaceOrientation:fromInterfaceOrientation];
     }
+
+	[floatingViewController_ didRotateFromInterfaceOrientation:fromInterfaceOrientation];
     
     // ensure we're correctly aligned (may be messed up in willAnimate, if panRecognizer is still active)
     [self alignStackAnimated:!self.isReducingAnimations];
@@ -1521,6 +1579,8 @@ enum {
     for (UIViewController *controller in self.viewControllers) {
         [controller willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
     }
+
+	[floatingViewController_ willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
     
     // enlarge/shrinken stack
     [self alignStackAnimated:!self.isReducingAnimations];
