@@ -1010,6 +1010,7 @@ enum {
     container.shadowWidth = defaultShadowWidth_;
     container.shadowAlpha = defaultShadowAlpha_;
     container.cornerRadius = cornerRadius_;
+	[container addMaskToCorners:UIRectCornerAllCorners];
     [container limitToMaxWidth:[self maxControllerWidth]];
     PSSVLog(@"container frame: %@", NSStringFromCGRect(container.frame));
     
