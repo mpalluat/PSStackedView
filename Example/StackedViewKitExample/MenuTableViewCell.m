@@ -27,16 +27,16 @@
         
         self.textLabel.font = [UIFont boldSystemFontOfSize:[UIFont systemFontSize]];
         self.textLabel.shadowOffset = CGSizeMake(0, 2);
-        self.textLabel.shadowColor = [UIColor colorWithWhite:0 alpha:0.25];
+        self.textLabel.shadowColor = [UIColor colorWithWhite:0 alpha:0.25f];
         
         self.imageView.contentMode = UIViewContentModeCenter;
         
         UIView *topLine = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 200, 1)] autorelease];
-        topLine.backgroundColor = [UIColor colorWithWhite:0.5 alpha:0.25];
+        topLine.backgroundColor = [UIColor colorWithWhite:0.5f alpha:0.25f];
         [self.textLabel.superview addSubview:topLine];
         
         UIView *bottomLine = [[[UIView alloc] initWithFrame:CGRectMake(0, 43, 200, 1)] autorelease];
-        bottomLine.backgroundColor = [UIColor colorWithWhite:0 alpha:0.25];
+        bottomLine.backgroundColor = [UIColor colorWithWhite:0 alpha:0.25f];
         [self.textLabel.superview addSubview:bottomLine];
         
         glowView = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 30, 43)] autorelease];

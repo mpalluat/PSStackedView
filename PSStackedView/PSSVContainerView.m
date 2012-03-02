@@ -37,8 +37,8 @@
 // creates vertical shadow
 - (CAGradientLayer *)shadowAsInverse:(BOOL)inverse {
 	CAGradientLayer *newShadow = [[[CAGradientLayer alloc] init] autorelease];
-    newShadow.startPoint = CGPointMake(0, 0.5);
-    newShadow.endPoint = CGPointMake(1.0, 0.5);
+    newShadow.startPoint = CGPointMake(0, 0.5f);
+    newShadow.endPoint = CGPointMake(1.0f, 0.5f);
 	CGColorRef darkColor  = (CGColorRef)CFRetain([UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor);
 	CGColorRef lightColor = (CGColorRef)CFRetain([UIColor clearColor].CGColor);
 	newShadow.colors = [NSArray arrayWithObjects:
@@ -179,8 +179,8 @@
     self.shadow = shadow_;
 }
 
-- (void)setShadow:(PSSVSide)shadow {
-    shadow_ = shadow;
+- (void)setShadow:(PSSVSide)theShadow {
+    shadow_ = theShadow;
     
     if (shadow & PSSVSideLeft) {
         if (!self.leftShadowLayer) {

@@ -346,7 +346,7 @@ typedef void(^PSSVSimpleBlock)(void);
 
 // returns true if firstVisibleIndex is the last available index.
 - (BOOL)isLastIndex {
-    BOOL isLastIndex = self.firstVisibleIndex == [self.viewControllers count] - 1;
+    BOOL isLastIndex = self.firstVisibleIndex == (NSInteger)([self.viewControllers count] - 1);
     return isLastIndex;
 }
 
@@ -533,20 +533,20 @@ enum {
 }
 
 /// calculates the specific rect
-- (CGRect)rectForControllerAtIndex:(NSUInteger)index {
+- (CGRect)rectForControllerAtIndex:(NSUInteger)idx {
     NSArray *frames = [self rectsForControllers];
-    return [[frames objectAtIndex:index] CGRectValue];
+    return [[frames objectAtIndex:idx] CGRectValue];
 }
 
 
 /// moves a rect around, recalculates following rects
-- (NSArray *)modifiedRects:(NSArray *)frames newLeft:(CGFloat)newLeft index:(NSUInteger)index {
+- (NSArray *)modifiedRects:(NSArray *)frames newLeft:(CGFloat)newLeft index:(NSUInteger)idx {
     NSMutableArray *modifiedFrames = [NSMutableArray arrayWithArray:frames];
     
     CGRect prevFrame;
-    for (int i = index; i < [modifiedFrames count]; i++) {
+    for (unsigned int i = idx; i < [modifiedFrames count]; i++) {
         CGRect vcFrame = [[modifiedFrames objectAtIndex:i] CGRectValue];
-        if (i == index) {
+        if (i == idx) {
             vcFrame.origin.x = newLeft;
         }else {
             vcFrame.origin.x = prevFrame.origin.x + prevFrame.size.width;
@@ -587,18 +587,18 @@ enum {
 }
 
 - (BOOL)displayViewControllerOnRightMost:(UIViewController *)vc animated:(BOOL)animated {
-    NSUInteger index = [self indexOfViewController:vc];
-    if (index != NSNotFound) {
-        [self displayViewControllerIndexOnRightMost:index animated:animated];
+    NSUInteger idx = [self indexOfViewController:vc];
+    if (idx != NSNotFound) {
+        [self displayViewControllerIndexOnRightMost:idx animated:animated];
         return YES;
     }
     return NO;
 }
 
 // ensures index is on rightmost position
-- (void)displayViewControllerIndexOnRightMost:(NSInteger)index animated:(BOOL)animated; {
+- (void)displayViewControllerIndexOnRightMost:(NSInteger)idx animated:(BOOL)animated; {
     // add epsilon to round indexes like 1.0 to 2.0, also -1.0 to -2.0
-    CGFloat floatIndexOffset = index - self.floatIndex;
+    CGFloat floatIndexOffset = idx - self.floatIndex;
     NSInteger indexOffset = ceilf(floatIndexOffset + (floatIndexOffset > 0 ? EPSILON : -EPSILON));
     if (indexOffset > 0) {
         [self collapseStack:indexOffset animated:animated];
@@ -845,7 +845,8 @@ enum {
         // special case for menu
         if (floatIndex == 0.f) {
             CGFloat menuCollapsedRatio = (self.largeLeftInset - self.firstViewController.containerView.left)/(self.largeLeftInset - self.leftInset);
-            menuCollapsedRatio = MAX(0.0f, MIN(0.5f, menuCollapsedRatio/2));
+			CGFloat minMenuCollapsedRatio = MIN(0.5f, menuCollapsedRatio/2);
+            menuCollapsedRatio = MAX(0.0f, minMenuCollapsedRatio);
             floatIndex += menuCollapsedRatio;
         }
         
@@ -923,19 +924,19 @@ enum {
 #pragma mark - SVStackRootController (Public)
 
 - (NSInteger)indexOfViewController:(UIViewController *)viewController {
-    __block NSUInteger index = [self.viewControllers indexOfObject:viewController];
-    if (index == NSNotFound) {
-        index = [self.viewControllers indexOfObject:viewController.navigationController];
-        if (index == NSNotFound) {
-            [self.viewControllers enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+    __block NSUInteger idx = [self.viewControllers indexOfObject:viewController];
+    if (idx == NSNotFound) {
+        idx = [self.viewControllers indexOfObject:viewController.navigationController];
+        if (idx == NSNotFound) {
+            [self.viewControllers enumerateObjectsUsingBlock:^(id obj, NSUInteger indx, BOOL *stop) {
                 if ([obj isKindOfClass:[UINavigationController class]] && ((UINavigationController *)obj).topViewController == viewController) {
-                    index = idx;
+                    idx = indx;
                     *stop = YES;
                 }
             }];
         }
     }
-    return index;
+    return idx;
 }
 
 - (UIViewController *)topViewController {
@@ -1014,7 +1015,7 @@ enum {
     if (animated) {
         container.alpha = 0.f;
         if (enableScalingFadeInOut_)
-            container.transform = CGAffineTransformMakeScale(1.2, 1.2); // large but fade in
+            container.transform = CGAffineTransformMakeScale(1.2f, 1.2f); // large but fade in
     }
     
 	if (self.floatingViewController) {
@@ -1076,7 +1077,7 @@ enum {
             [UIView animateWithDuration:kPSSVStackAnimationPopDuration delay:0.f options:UIViewAnimationOptionBeginFromCurrentState animations:^(void) {
                 lastController.containerView.alpha = 0.f;
                 if (enableScalingFadeInOut_)
-                    lastController.containerView.transform = CGAffineTransformMakeScale(0.8, 0.8); // make smaller while fading out
+                    lastController.containerView.transform = CGAffineTransformMakeScale(0.8f, 0.8f); // make smaller while fading out
             } completion:^(BOOL finished) {
                 // even with duration = 0, this doesn't fire instantly but on a future runloop with NSFireDelayedPerform, thus ugly double-check
                 if (finished) {
@@ -1113,15 +1114,15 @@ enum {
 // get view controllers that are in stack _after_ current view controller
 - (NSArray *)viewControllersAfterViewController:(UIViewController *)viewController {
     NSParameterAssert(viewController);
-    NSUInteger index = [self indexOfViewController:viewController];
-    if (NSNotFound == index) {
+    NSUInteger idx = [self indexOfViewController:viewController];
+    if (NSNotFound == idx) {
         return nil;
     }
     
     NSArray *array = nil;
     // don't remove view controller we've been called with
-    if ([self.viewControllers count] > index + 1) {
-        array = [self.viewControllers subarrayWithRange:NSMakeRange(index + 1, [self.viewControllers count] - index - 1)];
+    if ([self.viewControllers count] > idx + 1) {
+        array = [self.viewControllers subarrayWithRange:NSMakeRange(idx + 1, [self.viewControllers count] - idx - 1)];
     }
     
     return array;
@@ -1130,14 +1131,14 @@ enum {
 - (NSArray *)popToViewController:(UIViewController *)viewController animated:(BOOL)animated; {
     NSParameterAssert(viewController);
     
-    NSUInteger index = [self indexOfViewController:viewController];
-    if (NSNotFound == index) {
+    NSUInteger idx = [self indexOfViewController:viewController];
+    if (NSNotFound == idx) {
         return nil;
     }
-    PSSVLog(@"popping to index %d, from %d", index, [self.viewControllers count]);
+    PSSVLog(@"popping to index %d, from %d", idx, [self.viewControllers count]);
     
     NSArray *controllersToRemove = [self viewControllersAfterViewController:viewController];
-    [controllersToRemove enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+    [controllersToRemove enumerateObjectsUsingBlock:^(id obj, NSUInteger indx, BOOL *stop) {
         [self popViewControllerAnimated:animated];
     }];
     
@@ -1157,7 +1158,7 @@ enum {
     
     NSUInteger currentLeftInset = [self currentLeftInset];
     NSInteger screenSpaceLeft = [self screenWidth] - currentLeftInset;
-    while (screenSpaceLeft > 0 && lastVisibleIndex < [self.viewControllers count]) {
+    while (screenSpaceLeft > 0 && lastVisibleIndex < (NSInteger)[self.viewControllers count]) {
         UIViewController *vc = [self.viewControllers objectAtIndex:lastVisibleIndex];
         screenSpaceLeft -= vc.containerView.width;
         
@@ -1362,7 +1363,7 @@ enum {
 - (NSUInteger)canCollapseStack; {
     NSUInteger steps = [self.viewControllers count] - self.firstVisibleIndex - 1;
     
-    if (self.lastVisibleIndex == [self.viewControllers count]-1) {
+    if (self.lastVisibleIndex == (NSInteger)[self.viewControllers count]-1) {
         //PSSVLog(@"complete stack is displayed - aborting.");
         steps = 0;
     }else if (self.firstVisibleIndex + steps > [self.viewControllers count]-1) {
