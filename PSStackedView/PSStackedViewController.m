@@ -10,6 +10,7 @@
 #import "UIViewController+PSStackedView.h"
 #import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
+#import "UIViewController+PSStackedView.h"
 
 #define kPSSVStackAnimationSpeedModifier 1.f // DEBUG!
 #define kPSSVStackAnimationDuration kPSSVStackAnimationSpeedModifier * 0.25f
@@ -34,6 +35,7 @@ typedef void(^PSSVSimpleBlock)(void);
 @property(nonatomic, assign) NSInteger firstVisibleIndex;
 @property(nonatomic, assign) CGFloat floatIndex;
 - (UIViewController *)overlappedViewController;
+- (void)handlePanFrom:(UIPanGestureRecognizer *)recognizer;
 @end
 
 @implementation PSStackedViewController

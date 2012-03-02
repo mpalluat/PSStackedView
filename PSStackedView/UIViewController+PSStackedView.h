@@ -23,4 +23,9 @@
 /// returns the stack controller if the viewController is embedded
 - (PSStackedViewController *)stackController;
 
+#ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
+/// to maintain minimal changes for your app, we can do some clever swizzling here.
+- (UINavigationController *)navigationControllerSwizzled;
+#endif
+
 @end
