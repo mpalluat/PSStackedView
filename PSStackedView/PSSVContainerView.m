@@ -182,7 +182,7 @@
 - (void)setShadow:(PSSVSide)theShadow {
     shadow_ = theShadow;
     
-    if (shadow & PSSVSideLeft) {
+    if (shadow_ & PSSVSideLeft) {
         if (!self.leftShadowLayer) {
             CAGradientLayer *leftShadow = [self shadowAsInverse:YES];
             self.leftShadowLayer = leftShadow;
@@ -195,7 +195,7 @@
         [self.leftShadowLayer removeFromSuperlayer];
     }
     
-    if (shadow & PSSVSideRight) {
+    if (shadow_ & PSSVSideRight) {
         if (!self.rightShadowLayer) {
             CAGradientLayer *rightShadow = [self shadowAsInverse:NO];
             self.rightShadowLayer = rightShadow;
@@ -208,7 +208,7 @@
         [self.rightShadowLayer removeFromSuperlayer];
     }
     
-    if (shadow) {
+    if (shadow_) {
         if (!self.innerShadowLayer) {
             CAGradientLayer *innerShadow = [[[CAGradientLayer alloc] init] autorelease];
             innerShadow.colors = [NSArray arrayWithObjects:(id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, (id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, nil];
