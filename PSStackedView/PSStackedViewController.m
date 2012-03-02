@@ -53,6 +53,7 @@ typedef void(^PSSVSimpleBlock)(void);
 @synthesize enableShadows = enableShadows_;
 @synthesize enableDraggingPastInsets = enableDraggingPastInsets_;
 @synthesize enableScalingFadeInOut = enableScalingFadeInOut_;
+@synthesize enableAppearsFromRight = enableAppearsFromRight_;
 @synthesize defaultShadowWidth = defaultShadowWidth_;
 @synthesize defaultShadowAlpha  = defaultShadowAlpha_;
 @synthesize cornerRadius = cornerRadius_;
@@ -109,7 +110,8 @@ typedef void(^PSSVSimpleBlock)(void);
         enableBounces_ = YES;
         enableShadows_ = YES;
         enableDraggingPastInsets_ = YES;
-        enableScalingFadeInOut_ = YES;
+        enableScalingFadeInOut_ = NO;
+		enableAppearsFromRight_ = YES;
         defaultShadowWidth_ = 60.0f;
         defaultShadowAlpha_ = 0.2f;
         cornerRadius_ = 6.0f;
@@ -1018,6 +1020,9 @@ enum {
         container.alpha = 0.f;
         if (enableScalingFadeInOut_)
             container.transform = CGAffineTransformMakeScale(1.2f, 1.2f); // large but fade in
+		if (enableAppearsFromRight_) {
+			container.transform = CGAffineTransformMakeTranslation(leftGap, 0); // large but fade in
+		}
     }
     
 	if (self.floatingViewController) {
@@ -1029,7 +1034,7 @@ enum {
     if (animated) {
         [UIView animateWithDuration:kPSSVStackAnimationPushDuration delay:0.f options:UIViewAnimationOptionAllowUserInteraction animations:^{
             container.alpha = 1.f;
-            container.transform = CGAffineTransformIdentity;
+			container.transform = CGAffineTransformIdentity;
         } completion:nil];
     }
     
@@ -1080,6 +1085,8 @@ enum {
                 lastController.containerView.alpha = 0.f;
                 if (enableScalingFadeInOut_)
                     lastController.containerView.transform = CGAffineTransformMakeScale(0.8f, 0.8f); // make smaller while fading out
+				if (enableAppearsFromRight_)
+					lastController.containerView.transform = CGAffineTransformMakeTranslation(self.view.width - lastController.containerView.left, 0);
             } completion:^(BOOL finished) {
                 // even with duration = 0, this doesn't fire instantly but on a future runloop with NSFireDelayedPerform, thus ugly double-check
                 if (finished) {

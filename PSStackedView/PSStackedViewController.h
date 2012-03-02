@@ -150,6 +150,9 @@ enum {
 /// enable scaling while fade in/out
 @property(nonatomic, assign) BOOL enableScalingFadeInOut;
 
+/// enable apearing from right
+@property(nonatomic, assign) BOOL enableAppearsFromRight;
+
 /// shadow width
 @property(nonatomic, assign) CGFloat defaultShadowWidth;
 
