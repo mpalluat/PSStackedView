@@ -1453,8 +1453,6 @@ enum {
     // embedding rootViewController
     if (self.rootViewController) {
         [self.view addSubview:self.rootViewController.view];
-        self.rootViewController.view.frame = self.view.bounds;
-        self.rootViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }
     
     for (UIViewController *controller in self.viewControllers) {
@@ -1467,8 +1465,6 @@ enum {
 	// embedding floatingViewController
     if (self.floatingViewController) {
         [self.view addSubview:self.floatingViewController.view];
-        self.floatingViewController.view.frame = self.view.bounds;
-        self.floatingViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }
 	
 }
