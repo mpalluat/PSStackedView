@@ -8,7 +8,7 @@
 
 #import "PSSVContainerView.h"
 #import "PSStackedViewGlobal.h"
-#import "UIView+PSSizes.h"
+#import "UIView+YSGeometry.h"
 
 @interface PSSVContainerView ()
 @property(nonatomic, assign) CGFloat originalWidth;
@@ -110,21 +110,21 @@
 - (CGFloat)limitToMaxWidth:(CGFloat)maxWidth; {
     BOOL widthChanged = NO;
     
-    if (maxWidth && self.width > maxWidth) {
-        self.width = maxWidth;
+    if (maxWidth && self.frameWidth > maxWidth) {
+        self.frameWidth = maxWidth;
         widthChanged = YES;
-    }else if(self.originalWidth && self.width < self.originalWidth) {
-        self.width = MIN(maxWidth, self.originalWidth);
+    }else if(self.originalWidth && self.frameWidth < self.originalWidth) {
+        self.frameWidth = MIN(maxWidth, self.originalWidth);
         widthChanged = YES;
     }
-    self.controller.view.width = self.width;
+    self.controller.view.frameWidth = self.frameWidth;
     
     // update shadow layers for new width
     if (widthChanged) {
         [self updateContainer];
     }
     
-    return self.width;
+    return self.frameWidth;
 }
 
 - (void)setController:(UIViewController *)aController {
@@ -138,9 +138,9 @@
         
 		if (controller_) {
 			// properly embed view
-			self.originalWidth = self.controller.view.width;
+			self.originalWidth = self.controller.view.frameWidth;
 			controller_.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth; 
-			controller_.view.frame = CGRectMake(0, 0, controller_.view.width, controller_.view.height);
+			controller_.view.frame = CGRectMake(0, 0, controller_.view.frameWidth, controller_.view.frameHeight);
 			[self addSubview:controller_.view];
 			[self bringSubviewToFront:transparentView_];
 		}
@@ -187,7 +187,7 @@
             CAGradientLayer *leftShadow = [self shadowAsInverse:YES];
             self.leftShadowLayer = leftShadow;
         }
-        self.leftShadowLayer.frame = CGRectMake(-shadowWidth_, 0, shadowWidth_+cornerRadius_, self.controller.view.height);
+        self.leftShadowLayer.frame = CGRectMake(-shadowWidth_, 0, shadowWidth_+cornerRadius_, self.controller.view.frameHeight);
         if ([self.layer.sublayers indexOfObjectIdenticalTo:self.leftShadowLayer] != 0) {
             [self.layer insertSublayer:self.leftShadowLayer atIndex:0];
         }
@@ -200,7 +200,7 @@
             CAGradientLayer *rightShadow = [self shadowAsInverse:NO];
             self.rightShadowLayer = rightShadow;
         }
-        self.rightShadowLayer.frame = CGRectMake(self.width-cornerRadius_, 0, shadowWidth_, self.controller.view.height);
+        self.rightShadowLayer.frame = CGRectMake(self.frameWidth-cornerRadius_, 0, shadowWidth_, self.controller.view.frameHeight);
         if ([self.layer.sublayers indexOfObjectIdenticalTo:self.rightShadowLayer] != 0) {
             [self.layer insertSublayer:self.rightShadowLayer atIndex:0];
         }
@@ -214,7 +214,7 @@
             innerShadow.colors = [NSArray arrayWithObjects:(id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, (id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, nil];
             self.innerShadowLayer = innerShadow;
         }
-        self.innerShadowLayer.frame = CGRectMake(cornerRadius_, 0, self.width-cornerRadius_*2, self.controller.view.height);
+        self.innerShadowLayer.frame = CGRectMake(cornerRadius_, 0, self.frameWidth-cornerRadius_*2, self.controller.view.frameHeight);
         if ([self.layer.sublayers indexOfObjectIdenticalTo:self.innerShadowLayer] != 0) {
             [self.layer insertSublayer:self.innerShadowLayer atIndex:0];
         }
@@ -227,7 +227,7 @@
     BOOL isTransparent = darkRatio > 0.01f;
     
     if (isTransparent && !transparentView_) {
-        transparentView_ = [[UIView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.width, self.height)];
+        transparentView_ = [[UIView alloc] initWithFrame:CGRectMake(0.f, 0.f, self.frameWidth, self.frameHeight)];
         transparentView_.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         transparentView_.backgroundColor = [UIColor blackColor];
         transparentView_.alpha = 0.f;

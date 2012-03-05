@@ -68,7 +68,7 @@
     self.cellContents = contents;
     
     // add table menu
-	UITableView *tableView = [[[UITableView alloc] initWithFrame:CGRectMake(0, 0, kMenuWidth, self.view.height) style:UITableViewStylePlain] autorelease];
+	UITableView *tableView = [[[UITableView alloc] initWithFrame:CGRectMake(0, 0, kMenuWidth, self.view.frameHeight) style:UITableViewStylePlain] autorelease];
     self.menuTable = tableView;
     
     self.menuTable.backgroundColor = [UIColor clearColor];
@@ -135,7 +135,7 @@
     } else if(indexPath.row == 2) { // Twitter style
         viewController = [[[ExampleViewController1 alloc] initWithNibName:@"ExampleViewController1" bundle:nil] autorelease];
         ((ExampleViewController1 *)viewController).indexNumber = [stackController.viewControllers count];
-        viewController.view.width = roundf((self.view.width - stackController.leftInset)/2);
+        viewController.view.frameWidth = roundf((self.view.frameWidth - stackController.leftInset)/2);
     } else if(indexPath.row == 3) {        
         [stackController collapseStack:1 animated:YES];
     } else if(indexPath.row == 4) { // right

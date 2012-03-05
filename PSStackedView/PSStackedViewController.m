@@ -274,7 +274,7 @@ typedef void(^PSSVSimpleBlock)(void);
 - (NSUInteger)totalStackWidth {
     NSUInteger totalStackWidth = 0;
     for (UIViewController *controller in self.viewControllers) {
-        totalStackWidth += controller.containerView.width;
+        totalStackWidth += controller.containerView.frameWidth;
     }
     return totalStackWidth;
 }
@@ -300,8 +300,8 @@ typedef void(^PSSVSimpleBlock)(void);
     NSParameterAssert(viewController);
     NSUInteger screenWidth = [self screenWidth];
     
-    BOOL isVCVisible = ((viewController.containerView.left < screenWidth && !completely) ||
-                        (completely && viewController.containerView.right <= screenWidth));
+    BOOL isVCVisible = ((viewController.containerView.frameLeft < screenWidth && !completely) ||
+                        (completely && viewController.containerView.frameRight <= screenWidth));
     return isVCVisible;
 }
 
@@ -383,8 +383,8 @@ enum {
             isValid = stackCount > intIndex && contentWidth > ([self screenWidth] - self.leftInset);
             if (isValid && fabsf(restIndex - 0.5f) < EPSILON) {  // comparing floats -> if so, we have a .5 here
                 if (ceilf(floatIndex) < stackCount) { // at the end?
-                    CGFloat widthLeft = [[self.viewControllers objectAtIndex:floorf(floatIndex)] containerView].width;
-                    CGFloat widthRight = [[self.viewControllers objectAtIndex:ceilf(floatIndex)] containerView].width;
+                    CGFloat widthLeft = [[self.viewControllers objectAtIndex:floorf(floatIndex)] containerView].frameWidth;
+                    CGFloat widthRight = [[self.viewControllers objectAtIndex:ceilf(floatIndex)] containerView].frameWidth;
                     isValid = (widthLeft + widthRight) > ([self screenWidth] - self.leftInset);
                 }else {
                     isValid = NO;
@@ -510,14 +510,14 @@ enum {
             
             // should we pan it to the right?
             if (dockRight) {
-                leftPos = [self screenWidth] - currentVC.containerView.width;
+                leftPos = [self screenWidth] - currentVC.containerView.frameWidth;
             }
         }else if (idx > floatIndex) {
             // connect vc to left vc's right!
             leftPos = leftRect.origin.x + leftRect.size.width;
         }
         
-        CGRect currentRect = CGRectMake(leftPos, currentVC.containerView.top, currentVC.containerView.width, currentVC.containerView.height);
+        CGRect currentRect = CGRectMake(leftPos, currentVC.containerView.frameTop, currentVC.containerView.frameWidth, currentVC.containerView.frameHeight);
         [frames addObject:[NSValue valueWithCGRect:currentRect]];
     }];
     [self.viewControllers enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
@@ -573,7 +573,7 @@ enum {
     // are we at the end?
     UIViewController *topViewController = [self topViewController];
     if (topViewController == [self lastVisibleViewControllerCompletelyVisible:YES]) {
-        if (minCommonWidth + [self minimalLeftInset] <= topViewController.containerView.right) {
+        if (minCommonWidth + [self minimalLeftInset] <= topViewController.containerView.frameRight) {
             snapPointAvailableAfterOffset = NO;
         }
     }
@@ -583,7 +583,7 @@ enum {
         snapPointAvailableAfterOffset = NO;
     }
     
-    if ([self firstViewController].containerView.left > self.largeLeftInset) {
+    if ([self firstViewController].containerView.frameLeft > self.largeLeftInset) {
         snapPointAvailableAfterOffset = NO;
     }
     
@@ -639,7 +639,7 @@ enum {
     if (overlappedVC) {
         UIViewController *rightVC = [self nextViewController:overlappedVC];
         PSSVLog(@"overlapping %@ with %@", NSStringFromCGRect(overlappedVC.containerView.frame), NSStringFromCGRect(rightVC.containerView.frame));
-        overlapRatio = fabsf(overlappedVC.containerView.right - rightVC.containerView.left)/overlappedVC.containerView.width;
+        overlapRatio = fabsf(overlappedVC.containerView.frameRight - rightVC.containerView.frameLeft)/overlappedVC.containerView.frameWidth;
     }
     return overlapRatio;
 }
@@ -706,7 +706,7 @@ enum {
         leftViewController = tmp;
     }
     
-    BOOL overlapping = leftViewController.containerView.right > rightViewController.containerView.left;
+    BOOL overlapping = leftViewController.containerView.frameRight > rightViewController.containerView.frameLeft;
     if (overlapping) {
         PSSVLog(@"overlap detected: %@ (%@) with %@ (%@)", leftViewController, NSStringFromCGRect(leftViewController.containerView.frame), rightViewController, NSStringFromCGRect(rightViewController.containerView.frame));
     }
@@ -769,12 +769,12 @@ enum {
             NSInteger minimalLeftInset = [self minimalLeftInset];
             
             // we just move the top view controller
-            NSInteger currentVCLeftPosition = currentViewController.containerView.left;
+            NSInteger currentVCLeftPosition = currentViewController.containerView.frameLeft;
             if (isTopViewController) {
                 currentVCLeftPosition += offset;
             }else {
                 // make sure we're connected to the next controller!
-                currentVCLeftPosition = rightViewController.containerView.left - currentViewController.containerView.width;
+                currentVCLeftPosition = rightViewController.containerView.frameLeft - currentViewController.containerView.frameWidth;
             }
             
             // prevent scrolling < minimal width (except for the top view controller - allow stupidness!)
@@ -783,12 +783,12 @@ enum {
             }
             
             // a previous view controller is not allowed to overlap the next view controller.
-            if (leftViewController && leftViewController.containerView.right > currentVCLeftPosition) {
-                NSInteger leftVCLeftPosition = currentVCLeftPosition - leftViewController.containerView.width;
+            if (leftViewController && leftViewController.containerView.frameRight > currentVCLeftPosition) {
+                NSInteger leftVCLeftPosition = currentVCLeftPosition - leftViewController.containerView.frameWidth;
                 if (leftVCLeftPosition < minimalLeftInset) {
                     leftVCLeftPosition = minimalLeftInset;
                 }
-                leftViewController.containerView.left = leftVCLeftPosition;
+                leftViewController.containerView.frameLeft = leftVCLeftPosition;
             }
             
             if (enableDraggingPastInsets_ == NO)
@@ -804,7 +804,7 @@ enum {
                 }
             }
             
-            currentViewController.containerView.left = currentVCLeftPosition;
+            currentViewController.containerView.frameLeft = currentVCLeftPosition;
             
             isTopViewController = NO; // there can only be one.
         }];
@@ -830,7 +830,7 @@ enum {
         if (overlappedVC) {
             UIViewController *rightVC = [self nextViewController:overlappedVC];
             PSSVLog(@"overlapping %@ with %@", NSStringFromCGRect(overlappedVC.containerView.frame), NSStringFromCGRect(rightVC.containerView.frame));
-            overlapRatio = fabsf(overlappedVC.containerView.right - rightVC.containerView.left)/(overlappedVC.containerView.right - ([self screenWidth] - rightVC.containerView.width));
+            overlapRatio = fabsf(overlappedVC.containerView.frameRight - rightVC.containerView.frameLeft)/(overlappedVC.containerView.frameRight - ([self screenWidth] - rightVC.containerView.frameWidth));
         }
         
         // only update ratio if < 1 (else we move sth else)
@@ -840,15 +840,15 @@ enum {
             // overlap ratio
             UIViewController *lastVC = [self.visibleViewControllers lastObject];
             UIViewController *prevVC = [self previousViewController:lastVC];
-            if (lastVC && prevVC && lastVC.containerView.right > [self screenWidth]) {
-                overlapRatio = fabsf(([self screenWidth] - lastVC.containerView.left)/([self screenWidth] - (self.leftInset + prevVC.containerView.width)))*.5f;
+            if (lastVC && prevVC && lastVC.containerView.frameRight > [self screenWidth]) {
+                overlapRatio = fabsf(([self screenWidth] - lastVC.containerView.frameLeft)/([self screenWidth] - (self.leftInset + prevVC.containerView.frameWidth)))*.5f;
                 floatIndex += overlapRatio;
             }
         }
         
         // special case for menu
         if (floatIndex == 0.f) {
-            CGFloat menuCollapsedRatio = (self.largeLeftInset - self.firstViewController.containerView.left)/(self.largeLeftInset - self.leftInset);
+            CGFloat menuCollapsedRatio = (self.largeLeftInset - self.firstViewController.containerView.frameLeft)/(self.largeLeftInset - self.leftInset);
 			CGFloat minMenuCollapsedRatio = MIN(0.5f, menuCollapsedRatio/2);
             menuCollapsedRatio = MAX(0.0f, minMenuCollapsedRatio);
             floatIndex += menuCollapsedRatio;
@@ -984,7 +984,7 @@ enum {
     }
     
     PSSVLog(@"pushing with index %d on stack: %@ (animated: %d)", [self.viewControllers count], viewController, animated);    
-    viewController.view.height = [self screenHeight];
+    viewController.view.frameHeight = [self screenHeight];
     
     // get predefined stack width; query topViewController if we have a UINavigationController
     CGFloat stackWidth = viewController.stackWidth;
@@ -993,19 +993,19 @@ enum {
         stackWidth = topVC.stackWidth;
     }
     if (stackWidth > 0.f) {
-        viewController.view.width = stackWidth;
+        viewController.view.frameWidth = stackWidth;
     }
     
     // Starting out in portrait, right side up, we see a 20 pixel gap (for status bar???)
-    viewController.view.top = 0.f;
+    viewController.view.frameTop = 0.f;
     
     [self delegateWillInsertViewController:viewController];
     
     // controller view is embedded into a container
     PSSVContainerView *container = [PSSVContainerView containerViewWithController:viewController];
     NSUInteger leftGap = [self totalStackWidth] + [self minimalLeftInset];    
-    container.left = leftGap;
-    container.width = viewController.view.width;
+    container.frameLeft = leftGap;
+    container.frameWidth = viewController.view.frameWidth;
     container.autoresizingMask = UIViewAutoresizingFlexibleHeight; // width is not flexible!
     container.shadowWidth = defaultShadowWidth_;
     container.shadowAlpha = defaultShadowAlpha_;
@@ -1087,7 +1087,7 @@ enum {
                 if (enableScalingFadeInOut_)
                     lastController.containerView.transform = CGAffineTransformMakeScale(0.8f, 0.8f); // make smaller while fading out
 				if (enableAppearsFromRight_)
-					lastController.containerView.transform = CGAffineTransformMakeTranslation(self.view.width - lastController.containerView.left, 0);
+					lastController.containerView.transform = CGAffineTransformMakeTranslation(self.view.frameWidth - lastController.containerView.frameLeft, 0);
             } completion:^(BOOL finished) {
                 // even with duration = 0, this doesn't fire instantly but on a future runloop with NSFireDelayedPerform, thus ugly double-check
                 if (finished) {
@@ -1170,7 +1170,7 @@ enum {
     NSInteger screenSpaceLeft = [self screenWidth] - currentLeftInset;
     while (screenSpaceLeft > 0 && lastVisibleIndex < (NSInteger)[self.viewControllers count]) {
         UIViewController *vc = [self.viewControllers objectAtIndex:lastVisibleIndex];
-        screenSpaceLeft -= vc.containerView.width;
+        screenSpaceLeft -= vc.containerView.frameWidth;
         
         if (screenSpaceLeft >= 0) {
             lastVisibleIndex++;
@@ -1189,7 +1189,7 @@ enum {
 - (CGFloat)gridOffsetByPixels {
     CGFloat gridOffset = 0;
     
-    CGFloat firstVCLeft = self.firstViewController.containerView.left;
+    CGFloat firstVCLeft = self.firstViewController.containerView.frameLeft;
     
     // easiest case, controller is > then wide menu
     if (firstVCLeft > [self currentLeftInset] || firstVCLeft < [self currentLeftInset]) {
@@ -1206,7 +1206,7 @@ enum {
         
         UIViewController *targetVCController = [self.viewControllers objectAtIndex:targetIndex];
         CGRect targetVCFrame = [self rectForControllerAtIndex:targetIndex];
-        gridOffset = targetVCController.containerView.left - targetVCFrame.origin.x;
+        gridOffset = targetVCController.containerView.frameLeft - targetVCFrame.origin.x;
     }
     
     PSSVLog(@"gridOffset: %f", gridOffset);
@@ -1267,7 +1267,7 @@ enum {
             
             // if we're dragging menu all the way out, bounce back in
             PSSVLog(@"%@", NSStringFromCGRect(self.firstViewController.containerView.frame));
-            CGFloat firstVCLeft = self.firstViewController.containerView.left;
+            CGFloat firstVCLeft = self.firstViewController.containerView.frameLeft;
             if (firstVisibleIndex == 0 && !snapBackFromLeft_ && firstVCLeft >= self.largeLeftInset) {
                 bounceAtVeryEnd = YES;
             }else if(lastFullyVCIndex == [self.viewControllers count]-1 && lastFullyVCIndex > 0) {
@@ -1283,23 +1283,23 @@ enum {
             UIViewController *currentVC = (UIViewController *)obj;
             
             CGRect currentFrame = [[frames objectAtIndex:idx] CGRectValue];
-            currentVC.containerView.left = currentFrame.origin.x;
+            currentVC.containerView.frameLeft = currentFrame.origin.x;
             
             // menu drag to right case or swiping last vc towards menu
             if (bounceAtVeryEnd) {
                 if (idx == firstVisibleIndex) {
-                    frames = [self modifiedRects:frames newLeft:currentVC.containerView.left + snapOverOffset index:idx];
+                    frames = [self modifiedRects:frames newLeft:currentVC.containerView.frameLeft + snapOverOffset index:idx];
                 }
             }
             // snap the leftmost view controller
             else if ((snapOverOffset > 0 && idx == firstVisibleIndex) || (snapOverOffset < 0 && (idx == firstVisibleIndex+1))
                      || [self.viewControllers count] == 1) {
-                frames = [self modifiedRects:frames newLeft:currentVC.containerView.left + snapOverOffset index:idx];
+                frames = [self modifiedRects:frames newLeft:currentVC.containerView.frameLeft + snapOverOffset index:idx];
             }
             
             // set again (maybe changed)
             currentFrame = [[frames objectAtIndex:idx] CGRectValue];
-            currentVC.containerView.left = currentFrame.origin.x;
+            currentVC.containerView.frameLeft = currentFrame.origin.x;
         }];
         
         [self updateViewControllerMasksAndShadow];

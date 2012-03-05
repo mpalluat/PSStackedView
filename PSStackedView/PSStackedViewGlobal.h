@@ -6,7 +6,7 @@
 //  Copyright 2011 Peter Steinberger. All rights reserved.
 //
 
-#import "UIView+PSSizes.h"
+#import "UIView+YSGeometry.h"
 
 // Swizzles UIViewController's navigationController property. DANGER, WILL ROBINSON!
 // Only swizzles if a PSStackedViewRootController is created, and also works in peaceful
