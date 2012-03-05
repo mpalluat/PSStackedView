@@ -11,6 +11,10 @@
 
 @implementation UIView (YSGeometry)
 
+@dynamic frameOrigin, frameSize, frameLeft, frameRight, frameTop, frameBottom, frameWidth, frameHeight;
+@dynamic boundsOrigin, boundsSize, boundsLeft, boundsRight, boundsTop, boundsBottom, boundsWidth, boundsHeight;
+@dynamic centerX, centerY;
+
 - (void)setFrameUsingBlock:(frame_block_t)block {
 	CGRect frame = self.frame;
 	block(&frame);
@@ -140,7 +144,7 @@
 	[self setBoundsUsingBlock:^(CGRect *bounds) {
 		bounds->origin.x = left;
 	}];
-
+	
 }
 
 - (CGFloat)boundsRight {
