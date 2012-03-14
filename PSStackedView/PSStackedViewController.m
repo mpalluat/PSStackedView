@@ -34,8 +34,13 @@ typedef void(^PSSVSimpleBlock)(void);
 @property(nonatomic, retain) NSArray *viewControllers;
 @property(nonatomic, assign) NSInteger firstVisibleIndex;
 @property(nonatomic, assign) CGFloat floatIndex;
+@property(nonatomic, assign) BOOL createdWithAlloc;
 - (UIViewController *)overlappedViewController;
 - (void)handlePanFrom:(UIPanGestureRecognizer *)recognizer;
+
+- (void)sharedInit;
+- (void)embedSubviews;
+
 @end
 
 @implementation PSStackedViewController
@@ -59,6 +64,7 @@ typedef void(^PSSVSimpleBlock)(void);
 @synthesize cornerRadius = cornerRadius_;
 @synthesize numberOfTouches = numberOfTouches_;
 @dynamic firstVisibleIndex;
+@synthesize createdWithAlloc;
 
 #ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
 @synthesize navigationBar;
@@ -94,34 +100,9 @@ typedef void(^PSSVSimpleBlock)(void);
 - (id)initWithRootViewController:(UIViewController *)rootViewController floatingViewController:(UIViewController *)floatingViewController {
     if ((self = [super init])) {
         self.rootViewController = rootViewController;
-        if (rootViewController) objc_setAssociatedObject(rootViewController, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
-		
 		self.floatingViewController = floatingViewController;
-		if (floatingViewController) objc_setAssociatedObject(floatingViewController, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
-        
-        viewControllers_ = [[NSMutableArray alloc] init];
-        
-        // set some reasonble defaults
-        leftInset_ = 60;
-        largeLeftInset_ = 200;
-        
-        [self configureGestureRecognizer];
-		
-        enableBounces_ = YES;
-        enableShadows_ = YES;
-        enableDraggingPastInsets_ = YES;
-        enableScalingFadeInOut_ = NO;
-		enableAppearsFromRight_ = YES;
-        defaultShadowWidth_ = 60.0f;
-        defaultShadowAlpha_ = 0.2f;
-        cornerRadius_ = 6.0f;
-		
-#ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
-        PSSVLog("Swizzling UIViewController.navigationController");
-        Method origMethod = class_getInstanceMethod([UIViewController class], @selector(navigationController));
-        Method overrideMethod = class_getInstanceMethod([UIViewController class], @selector(navigationControllerSwizzled));
-        method_exchangeImplementations(origMethod, overrideMethod);
-#endif
+		self.createdWithAlloc = YES;
+        [self sharedInit];
     }
     return self;
 }
@@ -145,18 +126,12 @@ typedef void(^PSSVSimpleBlock)(void);
 	[super dealloc];
 }
 
-- (void)awakeFromNib {
+- (void)sharedInit {
 	if (rootViewController_) {
 		objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
-		[self.view addSubview:self.rootViewController.view];
-        self.rootViewController.view.frame = self.view.bounds;
-        self.rootViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	}
 	if (floatingViewController_) {
 		objc_setAssociatedObject(floatingViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
-		[self.view addSubview:self.floatingViewController.view];
-        self.floatingViewController.view.frame = self.view.bounds;
-        self.floatingViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	}
 	
 	viewControllers_ = [[NSMutableArray alloc] init];
@@ -181,6 +156,32 @@ typedef void(^PSSVSimpleBlock)(void);
 	Method overrideMethod = class_getInstanceMethod([UIViewController class], @selector(navigationControllerSwizzled));
 	method_exchangeImplementations(origMethod, overrideMethod);
 #endif
+}
+
+- (void)embedSubviews {
+	// embedding rootViewController
+    if (self.rootViewController) {
+        [self.view addSubview:self.rootViewController.view];
+    }
+    
+    for (UIViewController *controller in self.viewControllers) {
+        // forces view loading, calls viewDidLoad via system
+        UIView *controllerView = controller.view;
+		#pragma unused(controllerView)
+    }
+	
+	// embedding floatingViewController
+    if (self.floatingViewController) {
+        [self.view addSubview:self.floatingViewController.view];
+    }
+}
+
+- (void)awakeFromNib {
+	[self sharedInit];
+	
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self embedSubviews];
+	});
 	
 }
 
@@ -1460,24 +1461,10 @@ enum {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    // embedding rootViewController
-    if (self.rootViewController) {
-        [self.view addSubview:self.rootViewController.view];
-    }
-    
-    for (UIViewController *controller in self.viewControllers) {
-        // forces view loading, calls viewDidLoad via system
-        UIView *controllerView = controller.view;
-#pragma unused(controllerView)
-        //        [controller viewDidLoad];
-    }
 	
-	// embedding floatingViewController
-    if (self.floatingViewController) {
-        [self.view addSubview:self.floatingViewController.view];
-    }
-	
+	if (self.createdWithAlloc) {
+		[self embedSubviews];
+	}
 }
 
 - (void)viewWillAppear:(BOOL)animated {
