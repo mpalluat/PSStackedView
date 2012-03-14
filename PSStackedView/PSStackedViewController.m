@@ -159,9 +159,17 @@ typedef void(^PSSVSimpleBlock)(void);
 }
 
 - (void)embedSubviews {
-	// embedding rootViewController
+
     if (self.rootViewController) {
+		if (self.view.window) {
+			[self.rootViewController viewWillAppear:NO];
+		}
+		
         [self.view addSubview:self.rootViewController.view];
+		
+		if (self.view.window) {
+			[self.rootViewController viewDidAppear:NO];
+		}
     }
     
     for (UIViewController *controller in self.viewControllers) {
@@ -172,7 +180,15 @@ typedef void(^PSSVSimpleBlock)(void);
 	
 	// embedding floatingViewController
     if (self.floatingViewController) {
+		if (self.view.window) {
+			[self.floatingViewController viewWillAppear:NO];
+		}
+
         [self.view addSubview:self.floatingViewController.view];
+		
+		if (self.view.window) {
+			[self.floatingViewController viewDidAppear:NO];
+		}
     }
 }
 
@@ -1470,11 +1486,18 @@ enum {
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     
-    [self.rootViewController viewWillAppear:animated];
+	if (self.rootViewController.isViewLoaded) {
+		[self.rootViewController viewWillAppear:animated];
+	}
+    
     for (UIViewController *controller in self.viewControllers) {
-        [controller viewWillAppear:animated];
+		if (controller.isViewLoaded) {
+			[controller viewWillAppear:animated];
+		}
     }
-	[self.floatingViewController viewWillAppear:animated];
+	if (self.floatingViewController.isViewLoaded) {
+		[self.floatingViewController viewWillAppear:animated];
+	}
     
     // enlarge/shrinken stack
     [self updateViewControllerSizes];
@@ -1485,11 +1508,17 @@ enum {
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     
-    [self.rootViewController viewDidAppear:animated];
+	if (self.rootViewController.isViewLoaded) {
+		[self.rootViewController viewDidAppear:animated];
+	}
     for (UIViewController *controller in self.viewControllers) {
-        [controller viewDidAppear:animated];
+		if (controller.isViewLoaded) {
+			[controller viewDidAppear:animated];
+		}
     }
-	[self.floatingViewController viewDidAppear:animated];
+	if (self.floatingViewController.isViewLoaded) {
+		[self.floatingViewController viewDidAppear:animated];
+	}
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
