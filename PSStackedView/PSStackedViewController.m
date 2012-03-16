@@ -56,7 +56,7 @@ typedef void(^PSSVSimpleBlock)(void);
 - (void)endRemovingTransitionForChildViewController:(UIViewController*)childController;
 
 #ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
-- (void)swizzleMethodWithSelector:(SEL)selector withOtherMethodWithSelector:(SEL)otherSelector ofClass:(Class)class;
+- (void)swizzleMethodWithSelector:(SEL)selector ofClass:(Class)class withOtherMethodWithSelector:(SEL)otherSelector ofClass:(Class)class;
 #endif
 
 @end
@@ -146,6 +146,16 @@ typedef void(^PSSVSimpleBlock)(void);
 }
 
 - (void)sharedInit {
+	
+#ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		[self swizzleMethodWithSelector:@selector(navigationController) ofClass:[UIViewController class] withOtherMethodWithSelector:@selector(navigationControllerSwizzled) ofClass:[UIViewController class]];
+	});
+#endif
+	
+	[self ImplementContainerAPI];
+	
 	if (rootViewController_) {
 		objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
 	}
@@ -169,14 +179,8 @@ typedef void(^PSSVSimpleBlock)(void);
 	defaultShadowAlpha_ = 0.2f;
 	cornerRadius_ = 6.0f;
 	
-#ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
-	static dispatch_once_t onceToken;
-	dispatch_once(&onceToken, ^{
-		[self swizzleMethodWithSelector:@selector(navigationController) withOtherMethodWithSelector:@selector(navigationControllerSwizzled) ofClass:[UIViewController class]];
-	});
-#endif
 	
-	[self ImplementContainerAPI];
+	
 }
 
 
@@ -228,9 +232,7 @@ typedef void(^PSSVSimpleBlock)(void);
 		
 		[self.floatingViewController didMoveToParentViewController:self];
 		[self endAddingTransitionForChildViewController:self.floatingViewController];
-    }
-	
-	NSLog( @"childs %@\n", self.childViewControllers );
+    }	
 }
 
 - (void)awakeFromNib {
@@ -1136,7 +1138,7 @@ enum {
 		
         [self delegateWillRemoveViewController:lastController];
 		[self beginRemovingTransitionForChildViewController:lastController];
-		[lastController willMoveToParentViewController:self];
+		[lastController willMoveToParentViewController:nil];
         
         // remove from view stack!
         PSSVContainerView *container = lastController.containerView;
@@ -1149,6 +1151,7 @@ enum {
 			[lastController removeFromParentViewController];
             [self delegateDidRemoveViewController:lastController];
 			[self endRemovingTransitionForChildViewController:lastController];
+			objc_setAssociatedObject(lastController, kPSSVAssociatedStackViewControllerKey, nil, OBJC_ASSOCIATION_ASSIGN);
         };
         
         if (animated) { // kPSSVStackAnimationDuration
@@ -1170,10 +1173,7 @@ enum {
         }
         
         [viewControllers_ removeLastObject];        
-        
-        // save current stack controller as an associated object.
-        objc_setAssociatedObject(lastController, kPSSVAssociatedStackViewControllerKey, nil, OBJC_ASSOCIATION_ASSIGN);
-        
+                
         // realign view controllers
         [self updateViewControllerMasksAndShadow];
         [self alignStackAnimated:animated];
@@ -1757,7 +1757,7 @@ enum {
 }
 
 - (UIViewController*)imp_parentViewController {
-	UIViewController *parent = [self imp_parentViewController];
+	UIViewController *parent = [self.stackController imp_parentViewController];
 	if (parent) return parent;
 	else {
 		return self.stackController;
@@ -1775,7 +1775,7 @@ enum {
 	NSMutableArray *children = objc_getAssociatedObject(self, kPSSVAssociatedChildViewControllersKey);
 	if (!children) {
 		children = [NSMutableArray array];
-		objc_setAssociatedObject(children, kPSSVAssociatedChildViewControllersKey, self, OBJC_ASSOCIATION_RETAIN);
+		objc_setAssociatedObject(self, kPSSVAssociatedChildViewControllersKey, children, OBJC_ASSOCIATION_RETAIN);
 	}
 	
 	[children addObject:childController];
@@ -1784,8 +1784,10 @@ enum {
 - (void)imp_removeChildViewController:(UIViewController*)childController {
 	NSMutableArray *children = objc_getAssociatedObject(self, kPSSVAssociatedChildViewControllersKey);
 	if (children) {
-		[childController willMoveToParentViewController:nil];
+		[childController retain];
 		[children removeObject:childController];
+		[childController didMoveToParentViewController:nil];
+		[childController release];
 	}
 }
 
@@ -1812,14 +1814,14 @@ enum {
 	[self addMethodWithSelector:selector asMethodName:name toClass:[self class]];
 }
 
-- (void)swizzleMethodWithSelector:(SEL)selector withOtherMethodWithSelector:(SEL)otherSelector ofClass:(Class)class {
+- (void)swizzleMethodWithSelector:(SEL)selector ofClass:(Class)class withOtherMethodWithSelector:(SEL)otherSelector ofClass:(Class)otherClass {
 	Method origMethod = class_getInstanceMethod(class, selector);
-	Method overrideMethod = class_getInstanceMethod(class, otherSelector);
+	Method overrideMethod = class_getInstanceMethod(otherClass, otherSelector);
 	method_exchangeImplementations(origMethod, overrideMethod);
 }
 
 - (void)swizzleMethodWithSelector:(SEL)selector withOtherMethodWithSelector:(SEL)otherSelector {
-	[self swizzleMethodWithSelector:selector withOtherMethodWithSelector:otherSelector ofClass:[self class]];
+	[self swizzleMethodWithSelector:selector ofClass:[self class] withOtherMethodWithSelector:otherSelector ofClass:[self class]];
 }
 
 /*
@@ -1850,7 +1852,7 @@ enum {
 			
 			[self addMethodWithSelector:@selector(imp_willMoveToParentViewController:) asMethodName:@"willMoveToParentViewController:" toClass:[UIViewController class]];
 			[self addMethodWithSelector:@selector(imp_didMoveToParentViewController:) asMethodName:@"didMoveToParentViewController:" toClass:[UIViewController class]];
-			[self swizzleMethodWithSelector:@selector(imp_parentViewController) withOtherMethodWithSelector:@selector(parentViewController) ofClass:[UIViewController class]];
+			[self swizzleMethodWithSelector:@selector(imp_parentViewController) ofClass:[self class] withOtherMethodWithSelector:@selector(parentViewController) ofClass:[UIViewController class]];
 			[self addMethodWithSelector:@selector(imp_removeFromParentViewController) asMethodName:@"removeFromParentViewController" toClass:[UIViewController class]];
 			[self addMethodWithSelector:@selector(imp_isMovingFromParentViewController) asMethodName:@"isMovingFromParentViewController" toClass:[UIViewController class]];
 			[self addMethodWithSelector:@selector(imp_isMovingToParentViewController) asMethodName:@"isMovingToParentViewController" toClass:[UIViewController class]];
