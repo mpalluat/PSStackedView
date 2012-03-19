@@ -6,10 +6,10 @@
 //  Copyright 2011 Peter Steinberger. All rights reserved.
 //
 
-#import "PSStackedView.h"
-#import "UIViewController+PSStackedView.h"
 #import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
+
+#import "PSStackedView.h"
 #import "UIViewController+PSStackedView.h"
 
 #define kPSSVStackAnimationSpeedModifier 1.f // DEBUG!

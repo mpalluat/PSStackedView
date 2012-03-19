@@ -9,8 +9,8 @@
 #import <objc/runtime.h>
 
 #import "PSSVContainerView.h"
-#import "PSStackedViewGlobal.h"
 #import "UIView+YSGeometry.h"
+#import "PSStackedView.h"
 
 @interface PSSVContainerView ()
 @property(nonatomic, assign) CGFloat originalWidth;
