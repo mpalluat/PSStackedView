@@ -14,6 +14,7 @@
 #define ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
 
 #define kPSSVAssociatedStackViewControllerKey @"kPSSVAssociatedStackViewController"
+#define kPSSVAssociatedStackContainerViewKey @"kPSSVAssociatedStackContainerView"
 
 #define kPSSVStackedViewKitDebugEnabled
 

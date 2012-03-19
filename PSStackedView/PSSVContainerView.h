@@ -58,4 +58,8 @@ enum {
 /// corner radius
 @property(nonatomic, assign) CGFloat cornerRadius;
 
+- (BOOL)isControllerViewEmbedded;
+- (void)embedControllerView;
+- (void)unembedControllerView;
+
 @end

@@ -6,6 +6,8 @@
 //  Copyright 2011 Peter Steinberger. All rights reserved.
 //
 
+#import <objc/runtime.h>
+
 #import "PSSVContainerView.h"
 #import "PSStackedViewGlobal.h"
 #import "UIView+YSGeometry.h"
@@ -127,23 +129,40 @@
     return self.frameWidth;
 }
 
+- (BOOL)isControllerViewEmbedded {
+	return (controller_ && controller_.isViewLoaded && controller_.view.superview);
+}
+
+- (void)embedControllerView {
+	if (![self isControllerViewEmbedded]) {
+		// properly embed view
+		self.originalWidth = self.controller.view.frameWidth;
+		controller_.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth; 
+		controller_.view.frame = CGRectMake(0, 0, controller_.view.frameWidth, self.frameHeight);
+		[self addSubview:controller_.view];
+		[self bringSubviewToFront:transparentView_];
+		PSSVLog(@"embedding viewController %@\n", controller_);
+	}
+}
+
+- (void)unembedControllerView {
+	if ([self isControllerViewEmbedded]) {
+		[controller_.view removeFromSuperview];
+		PSSVLog(@"un-embedding vc %@\n", controller_);
+	}        
+}
+
 - (void)setController:(UIViewController *)aController {
     if (controller_ != aController) {
 		
         if (controller_) {
-            [controller_.view removeFromSuperview];
+            [self unembedControllerView];
 			[controller_ release];
         }        
         controller_ = [aController retain];
         
-		if (controller_) {
-			// properly embed view
-			self.originalWidth = self.controller.view.frameWidth;
-			controller_.view.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth; 
-			controller_.view.frame = CGRectMake(0, 0, controller_.view.frameWidth, controller_.view.frameHeight);
-			[self addSubview:controller_.view];
-			[self bringSubviewToFront:transparentView_];
-		}
+		[self embedControllerView];
+		objc_setAssociatedObject(controller_, kPSSVAssociatedStackContainerViewKey, self, OBJC_ASSOCIATION_ASSIGN);
     }
 }
 

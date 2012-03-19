@@ -16,12 +16,13 @@
 @implementation UIViewController (PSStackedView)
 
 // returns the containerView, where view controllers are embedded
-- (PSSVContainerView *)containerView; {
-    return ([self.view.superview isKindOfClass:[PSSVContainerView class]] ? (PSSVContainerView *)self.view.superview : nil);
+- (PSSVContainerView *)containerView {
+	PSSVContainerView *containerView = objc_getAssociatedObject(self, kPSSVAssociatedStackContainerViewKey);
+    return containerView;
 }
 
 // returns the stack controller if the viewController is embedded
-- (PSStackedViewController *)stackController; {
+- (PSStackedViewController *)stackController {
     PSStackedViewController *stackController = objc_getAssociatedObject(self, kPSSVAssociatedStackViewControllerKey);
     return stackController;
 }

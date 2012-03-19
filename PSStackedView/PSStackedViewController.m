@@ -49,6 +49,9 @@ typedef void(^PSSVSimpleBlock)(void);
 
 - (void)ImplementContainerAPI;
 
+- (NSArray*)inactiveViewControllers;
+- (NSArray*)activeViewControllers;
+
 - (void)beginAddingTransitionForChildViewController:(UIViewController*)childController;
 - (void)endAddingTransitionForChildViewController:(UIViewController*)childController;
 
@@ -178,9 +181,6 @@ typedef void(^PSSVSimpleBlock)(void);
 	defaultShadowWidth_ = 60.0f;
 	defaultShadowAlpha_ = 0.2f;
 	cornerRadius_ = 6.0f;
-	
-	
-	
 }
 
 
@@ -797,6 +797,30 @@ enum {
     return overlappedViewController;
 }
 
+- (void)embedActiveViewControllers {
+	[[self activeViewControllers] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+		UIViewController *vc = (UIViewController*)obj;
+		
+		if (![vc.containerView isControllerViewEmbedded]) {
+			if (self.isIOS4) [vc viewWillAppear:NO];
+			[vc.containerView embedControllerView];
+			if (self.isIOS4) [vc viewDidAppear:NO];
+		}
+		
+	}];
+}
+
+- (void)unembedInactiveViewControllers {
+	[[self inactiveViewControllers] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+		UIViewController *vc = (UIViewController*)obj;
+		if ([vc.containerView isControllerViewEmbedded]) {
+			if (self.isIOS4) [vc viewWillDisappear:NO];
+			[vc.containerView unembedControllerView];
+			if (self.isIOS4) [vc viewDidDisappear:NO];
+		}
+	}];
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - Touch Handling
 
@@ -812,16 +836,34 @@ enum {
 // moves the stack to a specific offset. 
 - (void)moveStackWithOffset:(NSInteger)offset animated:(BOOL)animated userDragging:(BOOL)userDragging {
     PSSVLog(@"moving stack on %d pixels (animated:%d, decellerating:%d)", offset, animated, userDragging);
+	[self stopStackAnimation];
+	if (offset > 0) {
+		UIViewController *firstActiveVC = [[self activeViewControllers] objectAtIndex:0];
+		UIViewController *targetCV = [self previousViewController:firstActiveVC];
+		if (![targetCV.containerView isControllerViewEmbedded]) {
+			if (self.isIOS4) [targetCV viewWillAppear:NO];
+			[targetCV.containerView embedControllerView];
+			if (self.isIOS4) [targetCV viewDidAppear:NO];
+		}
+	} else {
+		UIViewController *lastActiveVC = [[self activeViewControllers] lastObject];
+		UIViewController *targetCV = [self nextViewController:lastActiveVC];
+		if (![targetCV.containerView isControllerViewEmbedded]) {
+			if (self.isIOS4) [targetCV viewWillAppear:NO];
+			[targetCV.containerView embedControllerView];
+			if (self.isIOS4) [targetCV viewDidAppear:NO];
+		}
+	}
     
     // let the delegate know the user is moving the stack
     if (self.delegate && userDragging) {
         [self delegateDidPanViewController:self.topViewController byOffset:offset];
     }
     
-    [self stopStackAnimation];
+    
     [UIView animateWithDuration:animated ? kPSSVStackAnimationDuration : 0.f delay:0.f options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction animations:^{
         
-        // enumerate controllers from rig   ht to left
+        // enumerate controllers from right to left
         // scroll each controller until we begin to overlap!
         __block BOOL isTopViewController = YES;
         [self.viewControllers enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
@@ -855,7 +897,7 @@ enum {
             
             if (enableDraggingPastInsets_ == NO)
             {
-                int stackWidth = (!isTopViewController) ? 0 : (leftViewController) ? leftViewController.view.frame.size.width : (rightViewController) ? rightViewController.view.frame.size.width : 0;
+                int stackWidth = (!isTopViewController) ? 0 : (leftViewController) ? leftViewController.containerView.frameWidth : (rightViewController) ? rightViewController.containerView.frameWidth : 0;
                 int padding  = 45;
                 if ((int)(currentVCLeftPosition-stackWidth) <= (int)leftInset_ ) {
                     currentVCLeftPosition = leftInset_ + stackWidth;
@@ -1020,6 +1062,39 @@ enum {
 - (NSArray *)fullyVisibleViewControllers {
     return [self visibleViewControllersSetFullyVisible:YES];
 }
+
+- (NSArray*)inactiveViewControllers {
+	CGRect screenBounds = [UIScreen mainScreen].bounds; 
+	NSMutableArray *inactiveControllers = [NSMutableArray array];
+	__block CGPoint point = CGPointZero;
+	
+	[self.viewControllers enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+		UIViewController *vc = (UIViewController*)obj;
+		if (!vc.isViewLoaded || (vc.isViewLoaded && CGPointEqualToPoint(point, vc.containerView.frameOrigin)) || (vc.isViewLoaded && vc.containerView.frameLeft > CGRectGetMaxX(screenBounds))) {
+			[inactiveControllers insertObject:vc atIndex:0];
+		}
+		point = vc.containerView.frameOrigin;
+	}];
+	
+	return inactiveControllers;
+}
+
+- (NSArray*)activeViewControllers {
+	CGRect screenBounds = [UIScreen mainScreen].bounds; 
+	NSMutableArray *activeControllers = [NSMutableArray array];
+	__block CGPoint point = CGPointZero;
+	
+	[self.viewControllers enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+		UIViewController *vc = (UIViewController*)obj;
+		if (vc.isViewLoaded && (!CGPointEqualToPoint(point, vc.containerView.frameOrigin)) && (vc.containerView.frameLeft < CGRectGetMaxX(screenBounds))) {
+			[activeControllers insertObject:vc atIndex:0];
+		}
+		point = vc.containerView.frameOrigin;
+	}];
+	
+	return activeControllers;
+}
+
 
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated {
     [self pushViewController:viewController fromViewController:self.topViewController animated:animated];
@@ -1297,7 +1372,7 @@ enum {
     PSSVBounceBack,    
 }typedef PSSVBounceOption;
 
-- (void)alignStackAnimated:(BOOL)animated duration:(CGFloat)duration bounceType:(PSSVBounceOption)bounce; {
+- (void)alignStackAnimated:(BOOL)animated duration:(CGFloat)duration bounceType:(PSSVBounceOption)bounce {	
     animated = animated && !self.isReducingAnimations; // don't animate if set
     self.floatIndex = [self nearestValidFloatIndex:self.floatIndex]; // round to nearest correct index
     UIViewAnimationCurve animationCurve = UIViewAnimationCurveEaseInOut;
@@ -1371,6 +1446,8 @@ enum {
             currentFrame = [[frames objectAtIndex:idx] CGRectValue];
             currentVC.containerView.frameLeft = currentFrame.origin.x;
         }];
+		
+		[self embedActiveViewControllers];
         
         [self updateViewControllerMasksAndShadow];
         
@@ -1419,16 +1496,16 @@ enum {
                                  [self delegateDidAlign];
 								 
                              }
-                             
+							 
+							 [self unembedInactiveViewControllers];
                          }
          ];
     }
     else {
         alignmentBlock();
         //[self delegateDidAlign];
-		
     }
-    
+    NSLog(@"activeViewControllers = %@\n", [self activeViewControllers]);
 }
 
 - (void)alignStackAnimated:(BOOL)animated; {
