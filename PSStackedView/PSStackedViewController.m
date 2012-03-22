@@ -11,6 +11,7 @@
 
 #import "PSStackedView.h"
 #import "UIViewController+PSStackedView.h"
+#import "UIViewController+YSEmbedding.h"
 
 #define kPSSVStackAnimationSpeedModifier 1.f // DEBUG!
 #define kPSSVStackAnimationDuration kPSSVStackAnimationSpeedModifier * 0.25f
@@ -20,8 +21,6 @@
 #define kPSSVMaxSnapOverOffset 20
 #define kPSSVAssociatedBaseViewControllerKey @"kPSSVAssociatedBaseViewController"
 #define kPSSVAssociatedChildViewControllersKey @"kPSSVAssociatedChildViewControllers"
-#define kPSSVAssociatedChildViewControllerAddingKey @"kPSSVAssociatedChildViewControllerAdding"
-#define kPSSVAssociatedChildViewControllerRemovingKey @"kPSSVAssociatedChildViewControllerRemoving"
 
 // reduces alpha over overlapped view controllers. 1.f would totally black-out on complete overlay
 #define kAlphaReductRatio 10.f
@@ -39,28 +38,14 @@ typedef void(^PSSVSimpleBlock)(void);
 @property(nonatomic, assign) NSInteger firstVisibleIndex;
 @property(nonatomic, assign) CGFloat floatIndex;
 @property(nonatomic, assign) BOOL createdWithAlloc;
-@property(nonatomic, readonly) BOOL isIOS4;
 
 - (UIViewController *)overlappedViewController;
 - (void)handlePanFrom:(UIPanGestureRecognizer *)recognizer;
 
 - (void)sharedInit;
-- (void)embedSubviews;
-
-- (void)ImplementContainerAPI;
 
 - (NSArray*)inactiveViewControllers;
 - (NSArray*)activeViewControllers;
-
-- (void)beginAddingTransitionForChildViewController:(UIViewController*)childController;
-- (void)endAddingTransitionForChildViewController:(UIViewController*)childController;
-
-- (void)beginRemovingTransitionForChildViewController:(UIViewController*)childController;
-- (void)endRemovingTransitionForChildViewController:(UIViewController*)childController;
-
-#ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
-- (void)swizzleMethodWithSelector:(SEL)selector ofClass:(Class)class withOtherMethodWithSelector:(SEL)otherSelector ofClass:(Class)class;
-#endif
 
 @end
 
@@ -85,7 +70,6 @@ typedef void(^PSSVSimpleBlock)(void);
 @synthesize cornerRadius = cornerRadius_;
 @synthesize numberOfTouches = numberOfTouches_;
 @dynamic firstVisibleIndex;
-@dynamic isIOS4;
 @synthesize createdWithAlloc;
 
 #ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
@@ -153,12 +137,12 @@ typedef void(^PSSVSimpleBlock)(void);
 #ifdef ALLOW_SWIZZLING_NAVIGATIONCONTROLLER
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		[self swizzleMethodWithSelector:@selector(navigationController) ofClass:[UIViewController class] withOtherMethodWithSelector:@selector(navigationControllerSwizzled) ofClass:[UIViewController class]];
+        Method origMethod = class_getInstanceMethod([UIViewController class], @selector(navigationController));
+        Method overrideMethod = class_getInstanceMethod([UIViewController class], @selector(navigationControllerSwizzled));
+        method_exchangeImplementations(origMethod, overrideMethod);
 	});
 #endif
-	
-	[self ImplementContainerAPI];
-	
+		
 	if (rootViewController_) {
 		objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
 	}
@@ -193,13 +177,13 @@ typedef void(^PSSVSimpleBlock)(void);
 		UIView *unused = self.rootViewController.view;
 #pragma unused(unused)
 		
-		if (self.view.window && self.isIOS4) {
+		if (self.view.window && self.isRunningOnIOS4OrEarlier) {
 			[self.rootViewController viewWillAppear:NO];
 		}
 		
         [self.view addSubview:self.rootViewController.view];
 		
-		if (self.view.window && self.isIOS4) {
+		if (self.view.window && self.isRunningOnIOS4OrEarlier) {
 			[self.rootViewController viewDidAppear:NO];
 		}
 		
@@ -220,13 +204,13 @@ typedef void(^PSSVSimpleBlock)(void);
 		UIView *unused = self.floatingViewController.view;
 #pragma unused(unused)
 		
-		if (self.view.window && self.isIOS4) {
+		if (self.view.window && self.isRunningOnIOS4OrEarlier) {
 			[self.floatingViewController viewWillAppear:NO];
 		}
 		
 		[self.view addSubview:self.floatingViewController.view];
 		
-		if (self.view.window && self.isIOS4) {
+		if (self.view.window && self.isRunningOnIOS4OrEarlier) {
 			[self.floatingViewController viewDidAppear:NO];
 		}
 		
@@ -802,9 +786,9 @@ enum {
 		UIViewController *vc = (UIViewController*)obj;
 		
 		if (![vc.containerView isControllerViewEmbedded]) {
-			if (self.isIOS4) [vc viewWillAppear:NO];
+			if (self.isRunningOnIOS4OrEarlier) [vc viewWillAppear:NO];
 			[vc.containerView embedControllerView];
-			if (self.isIOS4) [vc viewDidAppear:NO];
+			if (self.isRunningOnIOS4OrEarlier) [vc viewDidAppear:NO];
 		}
 		
 	}];
@@ -814,9 +798,9 @@ enum {
 	[[self inactiveViewControllers] enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
 		UIViewController *vc = (UIViewController*)obj;
 		if ([vc.containerView isControllerViewEmbedded]) {
-			if (self.isIOS4) [vc viewWillDisappear:NO];
+			if (self.isRunningOnIOS4OrEarlier) [vc viewWillDisappear:NO];
 			[vc.containerView unembedControllerView];
-			if (self.isIOS4) [vc viewDidDisappear:NO];
+			if (self.isRunningOnIOS4OrEarlier) [vc viewDidDisappear:NO];
 		}
 	}];
 }
@@ -841,17 +825,17 @@ enum {
 		UIViewController *firstActiveVC = [[self activeViewControllers] objectAtIndex:0];
 		UIViewController *targetCV = [self previousViewController:firstActiveVC];
 		if (![targetCV.containerView isControllerViewEmbedded]) {
-			if (self.isIOS4) [targetCV viewWillAppear:NO];
+			if (self.isRunningOnIOS4OrEarlier) [targetCV viewWillAppear:NO];
 			[targetCV.containerView embedControllerView];
-			if (self.isIOS4) [targetCV viewDidAppear:NO];
+			if (self.isRunningOnIOS4OrEarlier) [targetCV viewDidAppear:NO];
 		}
 	} else {
 		UIViewController *lastActiveVC = [[self activeViewControllers] lastObject];
 		UIViewController *targetCV = [self nextViewController:lastActiveVC];
 		if (![targetCV.containerView isControllerViewEmbedded]) {
-			if (self.isIOS4) [targetCV viewWillAppear:NO];
+			if (self.isRunningOnIOS4OrEarlier) [targetCV viewWillAppear:NO];
 			[targetCV.containerView embedControllerView];
-			if (self.isIOS4) [targetCV viewDidAppear:NO];
+			if (self.isRunningOnIOS4OrEarlier) [targetCV viewDidAppear:NO];
 		}
 	}
     
@@ -1155,7 +1139,7 @@ enum {
     PSSVLog(@"container frame: %@", NSStringFromCGRect(container.frame));
     
     // relay willAppear and add to subview
-    if (self.isIOS4) [viewController viewWillAppear:animated];
+    if (self.isRunningOnIOS4OrEarlier) [viewController viewWillAppear:animated];
     
     if (animated) {
         container.alpha = 0.f;
@@ -1186,7 +1170,7 @@ enum {
     [container layoutIfNeeded];
     //container.width = viewController.view.width; // sync width (after it may has changed in layoutIfNeeded)
     
-    if (self.isIOS4) [viewController viewDidAppear:animated];
+    if (self.isRunningOnIOS4OrEarlier) [viewController viewDidAppear:animated];
     [viewControllers_ addObject:viewController];
     
     // register stack controller
@@ -1218,11 +1202,11 @@ enum {
         // remove from view stack!
         PSSVContainerView *container = lastController.containerView;
 		
-        if (self.isIOS4) [lastController viewWillDisappear:animated];
+        if (self.isRunningOnIOS4OrEarlier) [lastController viewWillDisappear:animated];
         
         PSSVSimpleBlock finishBlock = ^{
 			[container removeFromSuperview];
-            if (self.isIOS4) [lastController viewDidDisappear:animated];
+            if (self.isRunningOnIOS4OrEarlier) [lastController viewDidDisappear:animated];
 			[lastController removeFromParentViewController];
             [self delegateDidRemoveViewController:lastController];
 			[self endRemovingTransitionForChildViewController:lastController];
@@ -1616,16 +1600,16 @@ enum {
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     
-	if (self.rootViewController.isViewLoaded && self.isIOS4) {
+	if (self.rootViewController.isViewLoaded && self.isRunningOnIOS4OrEarlier) {
 		[self.rootViewController viewWillAppear:animated];
 	}
     
     for (UIViewController *controller in self.viewControllers) {
-		if (controller.isViewLoaded && self.isIOS4) {
+		if (controller.isViewLoaded && self.isRunningOnIOS4OrEarlier) {
 			[controller viewWillAppear:animated];
 		}
     }
-	if (self.floatingViewController.isViewLoaded && self.isIOS4) {
+	if (self.floatingViewController.isViewLoaded && self.isRunningOnIOS4OrEarlier) {
 		[self.floatingViewController viewWillAppear:animated];
 	}
     
@@ -1638,15 +1622,15 @@ enum {
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     
-	if (self.rootViewController.isViewLoaded && self.isIOS4) {
+	if (self.rootViewController.isViewLoaded && self.isRunningOnIOS4OrEarlier) {
 		[self.rootViewController viewDidAppear:animated];
 	}
     for (UIViewController *controller in self.viewControllers) {
-		if (controller.isViewLoaded && self.isIOS4) {
+		if (controller.isViewLoaded && self.isRunningOnIOS4OrEarlier) {
 			[controller viewDidAppear:animated];
 		}
     }
-	if (self.floatingViewController.isViewLoaded && self.isIOS4) {
+	if (self.floatingViewController.isViewLoaded && self.isRunningOnIOS4OrEarlier) {
 		[self.floatingViewController viewDidAppear:animated];
 	}
 }
@@ -1654,21 +1638,21 @@ enum {
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
     
-    if (self.isIOS4) [self.rootViewController viewWillDisappear:animated];
+    if (self.isRunningOnIOS4OrEarlier) [self.rootViewController viewWillDisappear:animated];
     for (UIViewController *controller in self.viewControllers) {
-        if (self.isIOS4) [controller viewWillDisappear:animated];
+        if (self.isRunningOnIOS4OrEarlier) [controller viewWillDisappear:animated];
     }
-	if (self.isIOS4) [self.floatingViewController viewWillDisappear:animated];
+	if (self.isRunningOnIOS4OrEarlier) [self.floatingViewController viewWillDisappear:animated];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     
-    if (self.isIOS4) [self.rootViewController viewDidDisappear:animated];
+    if (self.isRunningOnIOS4OrEarlier) [self.rootViewController viewDidDisappear:animated];
     for (UIViewController *controller in self.viewControllers) {
-        if (self.isIOS4) [controller viewDidDisappear:animated];
+        if (self.isRunningOnIOS4OrEarlier) [controller viewDidDisappear:animated];
     }
-	if (self.isIOS4) [self.floatingViewController viewDidDisappear:animated];
+	if (self.isRunningOnIOS4OrEarlier) [self.floatingViewController viewDidDisappear:animated];
 }
 
 - (void)viewDidUnload {
@@ -1704,7 +1688,7 @@ enum {
 	
 	[rootViewController_ willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
 	
-	if (self.isIOS4) {
+	if (self.isRunningOnIOS4OrEarlier) {
 		for (UIViewController *controller in self.viewControllers) {
 			[controller willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
 		}
@@ -1723,7 +1707,7 @@ enum {
         [self updateViewControllerMasksAndShadow];
     }
     
-	if (self.isIOS4) {
+	if (self.isRunningOnIOS4OrEarlier) {
 		for (UIViewController *controller in self.viewControllers) {
 			[controller didRotateFromInterfaceOrientation:fromInterfaceOrientation];
 		}
@@ -1744,7 +1728,7 @@ enum {
         [self updateViewControllerMasksAndShadow];    
     }
     
-	if (self.isIOS4) {
+	if (self.isRunningOnIOS4OrEarlier) {
 		// finally relay rotation events
 		for (UIViewController *controller in self.viewControllers) {
 			[controller willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
@@ -1767,176 +1751,6 @@ enum {
     }
     return YES;
 }
-
-#pragma mark - IOS4 Container API
-
-- (BOOL)isIOS4 {
-	static BOOL flag = NO;
-	static dispatch_once_t onceToken;
-	dispatch_once(&onceToken, ^{
-		flag = ![self respondsToSelector:NSSelectorFromString(@"automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers")];
-		
-	});
-	return flag;
-}
-
-
-- (void)beginAddingTransitionForChildViewController:(UIViewController*)childController {
-	if (self.isIOS4) {
-		objc_setAssociatedObject(childController, kPSSVAssociatedChildViewControllerAddingKey, [NSNumber numberWithBool:YES], OBJC_ASSOCIATION_RETAIN);
-	}
-}
-
-- (void)endAddingTransitionForChildViewController:(UIViewController*)childController {
-	if (self.isIOS4) {
-		objc_setAssociatedObject(childController, kPSSVAssociatedChildViewControllerAddingKey, nil, OBJC_ASSOCIATION_RETAIN);
-	}
-}
-
-- (void)beginRemovingTransitionForChildViewController:(UIViewController*)childController {
-	if (self.isIOS4) {
-		objc_setAssociatedObject(childController, kPSSVAssociatedChildViewControllerRemovingKey, [NSNumber numberWithBool:YES], OBJC_ASSOCIATION_RETAIN);
-	}
-}
-
-- (void)endRemovingTransitionForChildViewController:(UIViewController*)childController {
-	if (self.isIOS4) {
-		objc_setAssociatedObject(childController, kPSSVAssociatedChildViewControllerRemovingKey, nil, OBJC_ASSOCIATION_RETAIN);
-	}
-}
-
-
-
-
-- (NSArray*)imp_childViewControllers {
-	NSArray *children = objc_getAssociatedObject(self, kPSSVAssociatedChildViewControllersKey);
-	if (children) return [[children copy] autorelease];
-	return [NSArray array];
-}
-
-- (void)imp_willMoveToParentViewController:(UIViewController *)parent {}
-- (void)imp_didMoveToParentViewController:(UIViewController *)parent {}
-
-- (BOOL)imp_isMovingFromParentViewController {
-	NSNumber *flag = objc_getAssociatedObject(self, kPSSVAssociatedChildViewControllerRemovingKey);
-	if (flag) {
-		return [flag boolValue];
-	}
-	return NO;
-}
-
-- (BOOL)imp_isMovingToParentViewController {
-	NSNumber *flag = objc_getAssociatedObject(self, kPSSVAssociatedChildViewControllerAddingKey);
-	if (flag) {
-		return [flag boolValue];
-	}
-	return NO;
-}
-
-- (UIViewController*)imp_parentViewController {
-	UIViewController *parent = [self.stackController imp_parentViewController];
-	if (parent) return parent;
-	else {
-		return self.stackController;
-	}
-	return nil;
-}
-
-- (void)imp_addChildViewController:(UIViewController *)childController {
-	if (childController.stackController) {
-		[childController removeFromParentViewController];
-	}
-	
-	[childController willMoveToParentViewController:self];
-	
-	NSMutableArray *children = objc_getAssociatedObject(self, kPSSVAssociatedChildViewControllersKey);
-	if (!children) {
-		children = [NSMutableArray array];
-		objc_setAssociatedObject(self, kPSSVAssociatedChildViewControllersKey, children, OBJC_ASSOCIATION_RETAIN);
-	}
-	
-	[children addObject:childController];
-}
-
-- (void)imp_removeChildViewController:(UIViewController*)childController {
-	NSMutableArray *children = objc_getAssociatedObject(self, kPSSVAssociatedChildViewControllersKey);
-	if (children) {
-		[childController retain];
-		[children removeObject:childController];
-		[childController didMoveToParentViewController:nil];
-		[childController release];
-	}
-}
-
-- (void)imp_removeFromParentViewController {
-	[self.stackController performSelector:NSSelectorFromString(@"removeChildViewController:") withObject:self];
-}
-
-
-
-
-
-
-#pragma mark - method SWIZZLING and ADDING
-
-- (void)addMethodWithSelector:(SEL)selector asMethodName:(NSString*)name toClass:(Class)class {
-	Method method = class_getInstanceMethod([self class], selector);
-    const char *types = method_getTypeEncoding(method);
-	IMP address = method_getImplementation(method);
-	
-	class_addMethod(class, NSSelectorFromString(name), address, types);
-}
-
-- (void)addMethodWithSelector:(SEL)selector asMethodName:(NSString*)name {
-	[self addMethodWithSelector:selector asMethodName:name toClass:[self class]];
-}
-
-- (void)swizzleMethodWithSelector:(SEL)selector ofClass:(Class)class withOtherMethodWithSelector:(SEL)otherSelector ofClass:(Class)otherClass {
-	Method origMethod = class_getInstanceMethod(class, selector);
-	Method overrideMethod = class_getInstanceMethod(otherClass, otherSelector);
-	method_exchangeImplementations(origMethod, overrideMethod);
-}
-
-- (void)swizzleMethodWithSelector:(SEL)selector withOtherMethodWithSelector:(SEL)otherSelector {
-	[self swizzleMethodWithSelector:selector ofClass:[self class] withOtherMethodWithSelector:otherSelector ofClass:[self class]];
-}
-
-/*
- This method adds the following methods to UIViewController when running on IOS 4 :
- 
- - (void)willMoveToParentViewController:(UIViewController *)parent;
- - (void)didMoveToParentViewController:(UIViewController *)parent;
- - (void)removeFromParentViewController;
- - (BOOL)isMovingFromParentViewController;
- - (BOOL)isMovingToParentViewController;
- 
- It changes the implementation of  - (UIViewController*)parentViewController;
- 
- It also adds the following methods to self :
- 
- - (NSArray*)childViewControllers;
- - (void)addChildViewController:(UIViewController *)childController;
- - (void)removeChildViewController:(UIViewController*)childController;
-
-*/
-- (void)ImplementContainerAPI {
-	if (self.isIOS4) {
-		static dispatch_once_t onceToken;
-		dispatch_once(&onceToken, ^{
-			[self addMethodWithSelector:@selector(imp_childViewControllers) asMethodName:@"childViewControllers"];
-			[self addMethodWithSelector:@selector(imp_addChildViewController:) asMethodName:@"addChildViewController:"];
-			[self addMethodWithSelector:@selector(imp_removeChildViewController:) asMethodName:@"removeChildViewController:"];
-			
-			[self addMethodWithSelector:@selector(imp_willMoveToParentViewController:) asMethodName:@"willMoveToParentViewController:" toClass:[UIViewController class]];
-			[self addMethodWithSelector:@selector(imp_didMoveToParentViewController:) asMethodName:@"didMoveToParentViewController:" toClass:[UIViewController class]];
-			[self swizzleMethodWithSelector:@selector(imp_parentViewController) ofClass:[self class] withOtherMethodWithSelector:@selector(parentViewController) ofClass:[UIViewController class]];
-			[self addMethodWithSelector:@selector(imp_removeFromParentViewController) asMethodName:@"removeFromParentViewController" toClass:[UIViewController class]];
-			[self addMethodWithSelector:@selector(imp_isMovingFromParentViewController) asMethodName:@"isMovingFromParentViewController" toClass:[UIViewController class]];
-			[self addMethodWithSelector:@selector(imp_isMovingToParentViewController) asMethodName:@"isMovingToParentViewController" toClass:[UIViewController class]];
-		});
-	}
-}
-
 
 
 @end
