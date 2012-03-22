@@ -36,6 +36,7 @@
 		78DE83D713D3271700D2BADD /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 78DE83D613D3271700D2BADD /* QuartzCore.framework */; };
 		BD1B9067150521D00036DC02 /* PSStackedViewGlobal.m in Sources */ = {isa = PBXBuildFile; fileRef = BD1B9064150521D00036DC02 /* PSStackedViewGlobal.m */; };
 		BD1B9068150521D00036DC02 /* UIView+YSGeometry.m in Sources */ = {isa = PBXBuildFile; fileRef = BD1B9066150521D00036DC02 /* UIView+YSGeometry.m */; };
+		BD4F2287151B2CFD0006E9EA /* UIViewController+YSEmbedding.m in Sources */ = {isa = PBXBuildFile; fileRef = BD4F2286151B2CFD0006E9EA /* UIViewController+YSEmbedding.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -85,6 +86,8 @@
 		BD1B9064150521D00036DC02 /* PSStackedViewGlobal.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSStackedViewGlobal.m; sourceTree = "<group>"; };
 		BD1B9065150521D00036DC02 /* UIView+YSGeometry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIView+YSGeometry.h"; sourceTree = "<group>"; };
 		BD1B9066150521D00036DC02 /* UIView+YSGeometry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIView+YSGeometry.m"; sourceTree = "<group>"; };
+		BD4F2285151B2CFD0006E9EA /* UIViewController+YSEmbedding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIViewController+YSEmbedding.h"; sourceTree = "<group>"; };
+		BD4F2286151B2CFD0006E9EA /* UIViewController+YSEmbedding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIViewController+YSEmbedding.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -224,6 +227,8 @@
 				BD1B9064150521D00036DC02 /* PSStackedViewGlobal.m */,
 				BD1B9065150521D00036DC02 /* UIView+YSGeometry.h */,
 				BD1B9066150521D00036DC02 /* UIView+YSGeometry.m */,
+				BD4F2285151B2CFD0006E9EA /* UIViewController+YSEmbedding.h */,
+				BD4F2286151B2CFD0006E9EA /* UIViewController+YSEmbedding.m */,
 			);
 			name = "Other Source code";
 			path = "../Other Source code";
@@ -315,6 +320,7 @@
 				1FEE7FF814C8E23200424F88 /* PSStackedViewSegue.m in Sources */,
 				BD1B9067150521D00036DC02 /* PSStackedViewGlobal.m in Sources */,
 				BD1B9068150521D00036DC02 /* UIView+YSGeometry.m in Sources */,
+				BD4F2287151B2CFD0006E9EA /* UIViewController+YSEmbedding.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
