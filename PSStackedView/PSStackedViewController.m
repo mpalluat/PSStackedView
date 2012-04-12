@@ -819,6 +819,7 @@ enum {
 
 // moves the stack to a specific offset. 
 - (void)moveStackWithOffset:(NSInteger)offset animated:(BOOL)animated userDragging:(BOOL)userDragging {
+	if (self.viewControllers.count == 0) return;
     PSSVLog(@"moving stack on %d pixels (animated:%d, decellerating:%d)", offset, animated, userDragging);
 	[self stopStackAnimation];
 	if (offset > 0) {
