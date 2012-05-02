@@ -16,8 +16,8 @@
 #define kPSSVStackAnimationSpeedModifier 1.f // DEBUG!
 #define kPSSVStackAnimationDuration kPSSVStackAnimationSpeedModifier * 0.25f
 #define kPSSVStackAnimationBounceDuration kPSSVStackAnimationSpeedModifier * 0.20f
-#define kPSSVStackAnimationPushDuration kPSSVStackAnimationSpeedModifier * 0.25f
-#define kPSSVStackAnimationPopDuration kPSSVStackAnimationSpeedModifier * 0.25f
+#define kPSSVStackAnimationPushDuration kPSSVStackAnimationSpeedModifier * 0.4f
+#define kPSSVStackAnimationPopDuration kPSSVStackAnimationSpeedModifier * 0.4f
 #define kPSSVMaxSnapOverOffset 20
 #define kPSSVAssociatedBaseViewControllerKey @"kPSSVAssociatedBaseViewController"
 #define kPSSVAssociatedChildViewControllersKey @"kPSSVAssociatedChildViewControllers"
@@ -1143,7 +1143,7 @@ enum {
     if (self.isRunningOnIOS4OrEarlier) [viewController viewWillAppear:animated];
     
     if (animated) {
-        container.alpha = 0.f;
+    //    container.alpha = 0.f;
         if (enableScalingFadeInOut_)
             container.transform = CGAffineTransformMakeScale(1.2f, 1.2f); // large but fade in
 		if (enableAppearsFromRight_) {
