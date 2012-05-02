@@ -1142,12 +1142,16 @@ enum {
     // relay willAppear and add to subview
     if (self.isRunningOnIOS4OrEarlier) [viewController viewWillAppear:animated];
     
-    if (animated) {
-    //    container.alpha = 0.f;
+    if (animated) 
+	{
         if (enableScalingFadeInOut_)
-            container.transform = CGAffineTransformMakeScale(1.2f, 1.2f); // large but fade in
-		if (enableAppearsFromRight_) {
-			container.transform = CGAffineTransformMakeTranslation(leftGap, 0); // large but fade in
+		{
+            container.alpha = 0.f;
+			container.transform = CGAffineTransformMakeScale(1.2f, 1.2f); // large but fade in
+		}
+		if (enableAppearsFromRight_) 
+		{
+			container.transform = CGAffineTransformMakeTranslation(self.view.bounds.size.width, 0);
 		}
     }
     
