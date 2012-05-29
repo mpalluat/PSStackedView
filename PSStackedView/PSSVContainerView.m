@@ -97,7 +97,7 @@
 
 - (void)setFrame:(CGRect)frame {
     [super setFrame:frame];
-
+	
     // adapt layer heights
     for (CALayer *layer in [self shadowSet]) {
         CGRect aFrame = layer.frame;
@@ -168,29 +168,29 @@
 
 - (void)addMaskToCorners:(UIRectCorner)corners; {
     // Re-calculate the size of the mask to account for adding/removing rows.
-    CGRect frame = self.controller.view.bounds;
-    if([self.controller.view isKindOfClass:[UIScrollView class]] && ((UIScrollView *)self.controller.view).contentSize.height > self.controller.view.frame.size.height) {
-    	frame.size = ((UIScrollView *)self.controller.view).contentSize;
-    } else {
-        frame.size = self.controller.view.frame.size;
-    }
+	//    CGRect frame = self.controller.view.bounds;
+	//    if([self.controller.view isKindOfClass:[UIScrollView class]] && ((UIScrollView *)self.controller.view).contentSize.height > self.controller.view.frame.size.height) {
+	//    	frame.size = ((UIScrollView *)self.controller.view).contentSize;
+	//    } else {
+	//        frame.size = self.controller.view.frame.size;
+	//    }
     
-    // Create the path (with only the top-left corner rounded)
-    UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:frame 
-                                                   byRoundingCorners:corners
-                                                         cornerRadii:CGSizeMake(cornerRadius_, cornerRadius_)];
-    
-    // Create the shape layer and set its path
-    CAShapeLayer *maskLayer = [CAShapeLayer layer];
-    maskLayer.frame = frame;
-    maskLayer.path = maskPath.CGPath;
-    
-    // Set the newly created shape layer as the mask for the image view's layer
-    self.controller.view.layer.mask = maskLayer;
+	//    // Create the path (with only the top-left corner rounded)
+	//    UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:frame 
+	//                                                   byRoundingCorners:corners
+	//                                                         cornerRadii:CGSizeMake(cornerRadius_, cornerRadius_)];
+	//    
+	//    // Create the shape layer and set its path
+	//    CAShapeLayer *maskLayer = [CAShapeLayer layer];
+	//    maskLayer.frame = frame;
+	//    maskLayer.path = maskPath.CGPath;
+	//    
+	//    // Set the newly created shape layer as the mask for the image view's layer
+	//    self.controller.view.layer.mask = maskLayer;
 }
 
 - (void)removeMask; {
-    self.controller.view.layer.mask = nil;
+	//    self.controller.view.layer.mask = nil;
 }
 
 - (void)updateContainer {
@@ -228,15 +228,15 @@
     }
     
     if (shadow_) {
-        if (!self.innerShadowLayer) {
-            CAGradientLayer *innerShadow = [[[CAGradientLayer alloc] init] autorelease];
-            innerShadow.colors = [NSArray arrayWithObjects:(id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, (id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, nil];
-            self.innerShadowLayer = innerShadow;
-        }
-        self.innerShadowLayer.frame = CGRectMake(cornerRadius_, 0, self.frameWidth-cornerRadius_*2, self.controller.view.frameHeight);
-        if ([self.layer.sublayers indexOfObjectIdenticalTo:self.innerShadowLayer] != 0) {
-            [self.layer insertSublayer:self.innerShadowLayer atIndex:0];
-        }
+		//        if (!self.innerShadowLayer) {
+		//            CAGradientLayer *innerShadow = [[[CAGradientLayer alloc] init] autorelease];
+		//            innerShadow.colors = [NSArray arrayWithObjects:(id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, (id)[UIColor colorWithWhite:0.0f alpha:shadowAlpha_].CGColor, nil];
+		//            self.innerShadowLayer = innerShadow;
+		//        }
+		//        self.innerShadowLayer.frame = CGRectMake(cornerRadius_, 0, self.frameWidth-cornerRadius_*2, self.controller.view.frameHeight);
+		//        if ([self.layer.sublayers indexOfObjectIdenticalTo:self.innerShadowLayer] != 0) {
+		//            [self.layer insertSublayer:self.innerShadowLayer atIndex:0];
+		//        }
     }else {
         [self.innerShadowLayer removeFromSuperlayer];
     }

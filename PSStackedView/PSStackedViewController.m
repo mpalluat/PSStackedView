@@ -16,8 +16,8 @@
 #define kPSSVStackAnimationSpeedModifier 1.f // DEBUG!
 #define kPSSVStackAnimationDuration kPSSVStackAnimationSpeedModifier * 0.25f
 #define kPSSVStackAnimationBounceDuration kPSSVStackAnimationSpeedModifier * 0.20f
-#define kPSSVStackAnimationPushDuration kPSSVStackAnimationSpeedModifier * 0.25f
-#define kPSSVStackAnimationPopDuration kPSSVStackAnimationSpeedModifier * 0.25f
+#define kPSSVStackAnimationPushDuration kPSSVStackAnimationSpeedModifier * 0.4f
+#define kPSSVStackAnimationPopDuration kPSSVStackAnimationSpeedModifier * 0.4f
 #define kPSSVMaxSnapOverOffset 20
 #define kPSSVAssociatedBaseViewControllerKey @"kPSSVAssociatedBaseViewController"
 #define kPSSVAssociatedChildViewControllersKey @"kPSSVAssociatedChildViewControllers"
@@ -142,7 +142,7 @@ typedef void(^PSSVSimpleBlock)(void);
         method_exchangeImplementations(origMethod, overrideMethod);
 	});
 #endif
-		
+	
 	if (rootViewController_) {
 		objc_setAssociatedObject(rootViewController_, kPSSVAssociatedStackViewControllerKey, self, OBJC_ASSOCIATION_ASSIGN); // associate weak
 	}
@@ -819,6 +819,7 @@ enum {
 
 // moves the stack to a specific offset. 
 - (void)moveStackWithOffset:(NSInteger)offset animated:(BOOL)animated userDragging:(BOOL)userDragging {
+	if (self.viewControllers.count == 0) return;
     PSSVLog(@"moving stack on %d pixels (animated:%d, decellerating:%d)", offset, animated, userDragging);
 	[self stopStackAnimation];
 	if (offset > 0) {
@@ -1141,12 +1142,16 @@ enum {
     // relay willAppear and add to subview
     if (self.isRunningOnIOS4OrEarlier) [viewController viewWillAppear:animated];
     
-    if (animated) {
-        container.alpha = 0.f;
+    if (animated) 
+	{
         if (enableScalingFadeInOut_)
-            container.transform = CGAffineTransformMakeScale(1.2f, 1.2f); // large but fade in
-		if (enableAppearsFromRight_) {
-			container.transform = CGAffineTransformMakeTranslation(leftGap, 0); // large but fade in
+		{
+            container.alpha = 0.f;
+			container.transform = CGAffineTransformMakeScale(1.2f, 1.2f); // large but fade in
+		}
+		if (enableAppearsFromRight_) 
+		{
+			container.transform = CGAffineTransformMakeTranslation(self.view.bounds.size.width, 0);
 		}
     }
     
@@ -1232,7 +1237,7 @@ enum {
         }
         
         [viewControllers_ removeLastObject];        
-                
+		
         // realign view controllers
         [self updateViewControllerMasksAndShadow];
         [self alignStackAnimated:animated];
@@ -1489,7 +1494,6 @@ enum {
         alignmentBlock();
         //[self delegateDidAlign];
     }
-    NSLog(@"activeViewControllers = %@\n", [self activeViewControllers]);
 }
 
 - (void)alignStackAnimated:(BOOL)animated; {
