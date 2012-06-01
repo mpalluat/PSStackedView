@@ -585,6 +585,9 @@ enum {
 /// calculates the specific rect
 - (CGRect)rectForControllerAtIndex:(NSUInteger)idx {
     NSArray *frames = [self rectsForControllers];
+	if (idx >= frames.count) {
+		return CGRectZero;
+	}
     return [[frames objectAtIndex:idx] CGRectValue];
 }
 
@@ -823,7 +826,11 @@ enum {
     PSSVLog(@"moving stack on %d pixels (animated:%d, decellerating:%d)", offset, animated, userDragging);
 	[self stopStackAnimation];
 	if (offset > 0) {
-		UIViewController *firstActiveVC = [[self activeViewControllers] objectAtIndex:0];
+		UIViewController *firstActiveVC = nil;
+		NSArray *activeViewControllers = [self activeViewControllers];
+		if (activeViewControllers.count > 0) {
+			firstActiveVC = [activeViewControllers objectAtIndex:0];
+		}
 		UIViewController *targetCV = [self previousViewController:firstActiveVC];
 		if (![targetCV.containerView isControllerViewEmbedded]) {
 			if (self.isRunningOnIOS4OrEarlier) [targetCV viewWillAppear:NO];
@@ -907,7 +914,7 @@ enum {
         // there may be no controller completely visible - use partly visible then
         if (!lastViewController) {
             NSArray *visibleViewControllers = self.visibleViewControllers;
-            lastViewController = [visibleViewControllers count] ? [visibleViewControllers objectAtIndex:0] : nil;
+            lastViewController = [visibleViewControllers count] > 0 ? [visibleViewControllers objectAtIndex:0] : nil;
         }
         
         // calculate float index
@@ -1049,17 +1056,17 @@ enum {
 }
 
 - (NSArray*)inactiveViewControllers {
-	CGRect screenBounds = [UIScreen mainScreen].bounds; 
+//	CGRect screenBounds = [UIScreen mainScreen].bounds; 
 	NSMutableArray *inactiveControllers = [NSMutableArray array];
-	__block CGPoint point = CGPointZero;
-	
-	[self.viewControllers enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-		UIViewController *vc = (UIViewController*)obj;
-		if (!vc.isViewLoaded || (vc.isViewLoaded && CGPointEqualToPoint(point, vc.containerView.frameOrigin)) || (vc.isViewLoaded && vc.containerView.frameLeft > CGRectGetMaxX(screenBounds))) {
-			[inactiveControllers insertObject:vc atIndex:0];
-		}
-		point = vc.containerView.frameOrigin;
-	}];
+//	__block CGPoint point = CGPointZero;
+//	
+//	[self.viewControllers enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+//		UIViewController *vc = (UIViewController*)obj;
+//		if (!vc.isViewLoaded || (vc.isViewLoaded && CGPointEqualToPoint(point, vc.containerView.frameOrigin)) || (vc.isViewLoaded && vc.containerView.frameLeft > CGRectGetMaxX(screenBounds))) {
+//			[inactiveControllers insertObject:vc atIndex:0];
+//		}
+//		point = vc.containerView.frameOrigin;
+//	}];
 	
 	return inactiveControllers;
 }
